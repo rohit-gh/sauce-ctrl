@@ -48,7 +48,18 @@ onMounted(async () => {
 
   const proto = location.protocol === 'https:' ? 'wss' : 'ws'
   const wsPort = useRuntimeConfig().public.wsPort
-  ws = new WebSocket(`${proto}://${location.hostname}:${wsPort}`)
+
+  // Fetch the per-run terminal token over the same-origin API. Cross-site pages
+  // cannot read this response, so they cannot open a shell even if they guess
+  // the WebSocket port.
+  let token = ''
+  try {
+    const res = await $fetch<{ token: string | null }>('/api/terminal/token')
+    token = res?.token || ''
+  } catch {}
+
+  const query = token ? `?token=${encodeURIComponent(token)}` : ''
+  ws = new WebSocket(`${proto}://${location.hostname}:${wsPort}${query}`)
 
   ws.onmessage = (ev) => {
     let msg: any

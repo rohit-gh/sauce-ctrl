@@ -77,7 +77,12 @@ async function main() {
     HOST,
     PORT: String(httpPort),
     NITRO_PORT: String(httpPort),
+    // SAUCE_WS_PORT tells the terminal server which port to *listen* on.
+    // NUXT_PUBLIC_WS_PORT overrides the public runtime config so the browser
+    // *connects* to that same (dynamically chosen) port — without it the client
+    // falls back to the build-time default (3009) and the terminal never links.
     SAUCE_WS_PORT: String(wsPort),
+    NUXT_PUBLIC_WS_PORT: String(wsPort),
   }
 
   const server: Subprocess = Bun.spawn(

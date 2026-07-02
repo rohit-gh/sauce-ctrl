@@ -1,6 +1,5 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { setSetting } from './db'
 
 const execFileAsync = promisify(execFile)
 
@@ -91,16 +90,4 @@ export async function ghCloneRepo(nameWithOwner: string, targetDir: string): Pro
     maxBuffer: 1024 * 1024 * 16,
     env: { ...process.env, GH_PROMPT_DISABLED: '1', GIT_TERMINAL_PROMPT: '0' },
   })
-}
-
-/** Save the resolved auth token for future use (best effort). */
-export async function persistGhToken() {
-  try {
-    const { stdout } = await execFileAsync('gh', ['auth', 'token'])
-    const token = stdout.trim()
-    if (token) setSetting('gh_token', token)
-    return Boolean(token)
-  } catch {
-    return false
-  }
 }

@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
+import { randomBytes } from 'node:crypto'
 import type { Subprocess } from 'bun'
 
 /**
@@ -22,10 +23,16 @@ export default defineNitroPlugin((nitroApp) => {
     return
   }
 
+  // Per-run secret required to open a terminal WebSocket. Shared with the SPA
+  // over the same-origin API (/api/terminal/token) and with the child process
+  // via env so it can authenticate incoming connections.
+  const token = randomBytes(32).toString('hex')
+  g.__sauceWsToken = token
+
   try {
     const child: Subprocess = Bun.spawn([process.execPath, scriptPath], {
       cwd: process.cwd(),
-      env: { ...process.env, SAUCE_WS_PORT: String(WS_PORT) },
+      env: { ...process.env, SAUCE_WS_PORT: String(WS_PORT), SAUCE_WS_TOKEN: token },
       stdout: 'inherit',
       stderr: 'inherit',
     })

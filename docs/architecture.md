@@ -76,7 +76,7 @@
 
 ```sql
 projects (id, name, path, added_at, last_opened)
-settings (key, value)          -- e.g. gh_token
+settings (key, value)          -- app preferences (no credentials stored here)
 cache    (key, value, expires_at)
 ```
 

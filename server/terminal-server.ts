@@ -14,11 +14,38 @@ interface WsData {
 
 const WS_PORT = Number(process.env.SAUCE_WS_PORT || 3009)
 
+// Shared secret minted by the Nitro process (see server/plugins/terminal-ws.ts)
+// and handed to the SPA over the same-origin API. Connections without it are
+// rejected, which closes the browser-origin (CSRF-to-shell) attack even for
+// pages that guess the port.
+const WS_TOKEN = process.env.SAUCE_WS_TOKEN || ''
+
+/** Accept only same-machine origins so a remote web page cannot open a shell. */
+function isLoopbackOrigin(origin: string | null): boolean {
+  // Non-browser clients (e.g. the app opened as a native window) may omit Origin.
+  if (!origin) return true
+  try {
+    const host = new URL(origin).hostname
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]'
+  } catch {
+    return false
+  }
+}
+
 function startServer() {
   return Bun.serve<WsData, undefined>({
+    // Bind to loopback only — never expose the shell to the LAN.
+    hostname: '127.0.0.1',
     port: WS_PORT,
     idleTimeout: 255,
     fetch(req, srv) {
+      if (!isLoopbackOrigin(req.headers.get('origin'))) {
+        return new Response('Forbidden', { status: 403 })
+      }
+      if (WS_TOKEN) {
+        const token = new URL(req.url).searchParams.get('token')
+        if (token !== WS_TOKEN) return new Response('Unauthorized', { status: 401 })
+      }
       if (srv.upgrade(req, { data: { pty: null } })) return
       return new Response('SauceControl terminal server', { status: 426 })
     },

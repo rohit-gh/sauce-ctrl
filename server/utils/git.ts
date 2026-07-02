@@ -11,6 +11,18 @@ export interface GitResult {
 }
 
 /**
+ * Guard against argument (option) injection: a user-supplied ref, hash, or
+ * branch name that begins with "-" would be parsed by git as a flag. None of
+ * these values legitimately start with "-", so reject those outright.
+ */
+function assertNotOption(value: string, label = 'value'): string {
+  const v = value.trim()
+  if (!v) throw new Error(`${label} is required`)
+  if (v.startsWith('-')) throw new Error(`Invalid ${label}: must not start with "-"`)
+  return v
+}
+
+/**
  * Run a git command inside `cwd`. Throws an Error with the git stderr on failure.
  */
 export async function runGit(cwd: string, args: string[]): Promise<GitResult> {
@@ -401,19 +413,19 @@ export async function gitPush(dir: string, remote = 'origin'): Promise<void> {
 }
 
 export async function gitReset(dir: string, hash: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> {
-  await runGit(dir, ['reset', `--${mode}`, hash])
+  await runGit(dir, ['reset', `--${mode}`, assertNotOption(hash, 'hash')])
 }
 
 export async function gitCherryPick(dir: string, hash: string): Promise<void> {
-  await runGit(dir, ['cherry-pick', hash])
+  await runGit(dir, ['cherry-pick', assertNotOption(hash, 'hash')])
 }
 
 export async function createBranchAt(dir: string, name: string, startPoint: string): Promise<void> {
-  await runGit(dir, ['branch', name, startPoint])
+  await runGit(dir, ['branch', assertNotOption(name, 'branch name'), assertNotOption(startPoint, 'start point')])
 }
 
 export async function checkoutBranch(dir: string, branch: string): Promise<void> {
-  const target = branch.replace(/^remotes\//, '').replace(/^origin\//, '')
+  const target = assertNotOption(branch, 'branch').replace(/^remotes\//, '').replace(/^origin\//, '')
   try {
     await runGit(dir, ['checkout', target])
   } catch {
@@ -478,10 +490,11 @@ export async function createBranchFromCurrent(
   name: string,
   stash: boolean,
 ): Promise<{ branch: string; stashed: boolean }> {
+  const safeName = assertNotOption(name, 'branch name')
   let stashed = false
   if (stash) {
-    stashed = await stashPush(dir, `sauce-ctrl: before creating ${name}`)
+    stashed = await stashPush(dir, `sauce-ctrl: before creating ${safeName}`)
   }
-  await runGit(dir, ['checkout', '-b', name])
+  await runGit(dir, ['checkout', '-b', safeName])
   return { branch: await currentBranch(dir), stashed }
 }

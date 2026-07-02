@@ -36,7 +36,10 @@ and run it on machines you control.
 
 ## Known considerations
 
-- The terminal WebSocket server binds to a local port (`SAUCE_WS_PORT`, default `3009`).
-  It is intended for localhost use during development.
-- GitHub tokens may be cached in `~/.sauce-ctrl/sauce-ctrl.sqlite` after `gh auth`.
-  Protect this file like any other credential store.
+- The terminal WebSocket server (`SAUCE_WS_PORT`, default `3009`) binds to
+  `127.0.0.1` only, rejects non-loopback `Origin` headers, and requires a
+  per-run token minted by the app and served same-origin at
+  `/api/terminal/token`. This prevents both LAN access and cross-site pages
+  from opening a shell.
+- GitHub authentication is delegated to the `gh` CLI; SauceControl does not copy
+  or store your GitHub token in its database.
