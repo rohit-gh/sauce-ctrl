@@ -24,7 +24,7 @@ export const THEMES: ThemeOption[] = [
 ]
 
 export const DEFAULT_THEME = 'charcoal'
-const STORAGE_KEY = 'sauce-control:theme'
+const STORAGE_KEY = 'sauce-ctrl:theme'
 
 function isValid(id: string | null): id is string {
   return !!id && THEMES.some((t) => t.id === id)

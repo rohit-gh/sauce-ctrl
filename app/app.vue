@@ -42,6 +42,7 @@ watch(
     <GhSetup v-if="ui.ghSetupOpen" />
     <GhCloneModal v-if="ui.ghCloneOpen" />
     <SettingsModal v-if="ui.settingsOpen" />
+    <InstallAppModal v-if="ui.pwaInstallOpen" />
     <UnsupportedRemoteModal />
   </div>
 </template>

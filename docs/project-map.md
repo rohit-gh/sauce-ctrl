@@ -57,13 +57,23 @@ File-by-file index. Update this when adding major modules.
 | `plugins/terminal-ws.ts` | Supervise terminal child process |
 | `terminal-server.ts` | WebSocket + PTY server (standalone Bun) |
 
+## `scripts/`
+
+| Path | Purpose |
+|------|---------|
+| `build-appimage.sh` | Bundle Bun + `.output` + terminal sources into a Linux AppImage (`bun run build:appimage`) |
+| `appimage/launcher.ts` | AppImage entry: pick free ports, start server, open app window |
+| `appimage/AppRun` | AppImage boot shim → runs the launcher under bundled Bun |
+| `appimage/sauce-ctrl.desktop` | Desktop entry metadata for the AppImage |
+
 ## Generated / ignored
 
 | Path | Notes |
 |------|-------|
 | `.nuxt/`, `.output/` | Build artifacts — do not edit |
+| `release/` | AppImage output (`SauceControl-x86_64.AppImage`) + cached `appimagetool` |
 | `node_modules/` | Dependencies |
-| `~/.sauce-control/` | Runtime SQLite (user machine) |
+| `~/.sauce-ctrl/` | Runtime SQLite (user machine) |
 
 ## API quick reference
 

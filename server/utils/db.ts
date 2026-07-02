@@ -9,9 +9,9 @@ let db: Database | null = null
 export function getDb(): Database {
   if (db) return db
 
-  const dir = join(homedir(), '.sauce-control')
+  const dir = join(homedir(), '.sauce-ctrl')
   mkdirSync(dir, { recursive: true })
-  const file = join(dir, 'sauce-control.sqlite')
+  const file = join(dir, 'sauce-ctrl.sqlite')
 
   db = new Database(file, { create: true })
   db.exec('PRAGMA journal_mode = WAL;')

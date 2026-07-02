@@ -13,7 +13,7 @@ Local Git GUI: **Nuxt 4 SPA** (`ssr: false`) + **Nitro API** on **Bun** (not Nod
 - **UI**: Vue 3, Pinia, Tailwind. One concern = one Nuxt component in `app/components/`.
 - **Git**: shell out to `git` CLI via `server/utils/git.ts` — do not add libgit2/nodegit.
 - **GitHub**: `gh` CLI only (`server/utils/gh.ts`).
-- **Persistence**: `~/.sauce-control/sauce-control.sqlite` via `server/utils/db.ts`.
+- **Persistence**: `~/.sauce-ctrl/sauce-ctrl.sqlite` via `server/utils/db.ts`.
 
 ## Terminal (critical)
 

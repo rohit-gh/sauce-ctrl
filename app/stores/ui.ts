@@ -6,6 +6,7 @@ export const useUiStore = defineStore('ui', {
     ghSetupOpen: false,
     ghCloneOpen: false,
     settingsOpen: false,
+    pwaInstallOpen: false,
     unsupportedRemote: null as { remote: string; url: string } | null,
   }),
   actions: {

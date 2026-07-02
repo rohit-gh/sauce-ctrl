@@ -17,6 +17,7 @@ bun run dev
 ```
 
 - Use **Bun** as the runtime (`bun run dev` runs `bun --bun nuxt dev`).
+- To verify the Linux standalone build: `bun run build:appimage` (see [getting started → AppImage](./docs/getting-started.md#run-as-a-standalone-app-appimage)).
 - Keep changes focused — one concern per PR.
 - Match existing patterns in `app/components/`, `app/stores/`, and `server/utils/`.
 

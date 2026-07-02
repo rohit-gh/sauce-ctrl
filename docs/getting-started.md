@@ -15,7 +15,7 @@
 
 ```bash
 git clone <your-repo-url>
-cd sauce-control
+cd sauce-ctrl
 bun install
 cp .env.example .env   # optional — defaults work for local dev
 ```
@@ -44,6 +44,46 @@ bun run preview
 ```
 
 Ensure the terminal child process can start (Bun available, port `3009` free).
+
+## Run as a standalone app (AppImage)
+
+If you'd rather **run SauceControl like any other desktop app** — without keeping a dev server open — you can build an **AppImage**. It's a single file that bundles the app and the Bun runtime, so you can double-click it or add it to your launcher. No install wizard required.
+
+From the project root:
+
+```bash
+bun run build:appimage
+```
+
+When the build finishes, you get the AppImage in two spots:
+
+- `release/SauceControl-x86_64.AppImage` — the freshly built file in the project.
+- Your **Downloads** folder — the build automatically copies it there and marks it executable, so it's ready to double-click or run immediately.
+
+```bash
+# run the copy that's already set up for you
+~/Downloads/SauceControl-x86_64.AppImage
+
+# or run it from the project (make it executable first)
+chmod +x release/SauceControl-x86_64.AppImage
+./release/SauceControl-x86_64.AppImage
+```
+
+> The Downloads location follows your system's configured folder name (via `xdg-user-dir`), falling back to `~/Downloads`.
+
+**What happens when you launch it** (`scripts/appimage/launcher.ts`):
+
+1. Finds free ports for the HTTP API and the terminal WebSocket server.
+2. Starts the server using the bundled Bun runtime.
+3. Opens the UI in its own app window (Chromium-style `--app` mode when available), or your default browser. Closing the window quits SauceControl.
+
+**Good to know:**
+
+- **`git` is still required** on the machine where you run the AppImage (`gh` too, if you use GitHub features). Those tools aren't bundled inside the image.
+- **Your data stays in** `~/.sauce-ctrl/` — same as when you run from source.
+- **Bun is bundled** from whatever `bun` binary is on your `PATH` at build time.
+- **First build needs network** — `appimagetool` is downloaded once into `release/.tools/`.
+- **No FUSE?** Run with `./release/SauceControl-x86_64.AppImage --appimage-extract-and-run`.
 
 ## First use
 

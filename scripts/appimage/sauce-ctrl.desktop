@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=SauceControl
+GenericName=Git GUI
+Comment=A local Git GUI — Git, but pleasant.
+Exec=AppRun
+Icon=sauce-ctrl
+Categories=Development;RevisionControl;
+Terminal=false
+StartupWMClass=SauceControl

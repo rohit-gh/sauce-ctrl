@@ -4,13 +4,15 @@ Quick navigation for humans and AI agents. Prefer these docs over re-scanning th
 
 | Doc | Purpose |
 |-----|---------|
-| [Getting started](./getting-started.md) | Install, run, env vars, first-use |
+| [Getting started](./getting-started.md) | Install, run, build an AppImage, env vars, first-use |
 | [Architecture](./architecture.md) | System design, data flow, key constraints |
 | [Project map](./project-map.md) | File/folder index with responsibilities |
 
 ## One-liner
 
 **SauceControl** = local Nuxt 4 SPA + Bun Nitro API that wraps `git`/`gh`, with a real PTY terminal and SQLite project cache.
+
+On Linux you can also **`bun run build:appimage`** to produce a self-contained AppImage you run directly — handy for sharing or skipping a dev setup. See [getting started → Run as a standalone app](./getting-started.md#run-as-a-standalone-app-appimage).
 
 ## Ports (defaults)
 
@@ -22,8 +24,8 @@ Quick navigation for humans and AI agents. Prefer these docs over re-scanning th
 ## User data (not in repo)
 
 ```
-~/.sauce-control/
-  sauce-control.sqlite    # projects, settings, cache
+~/.sauce-ctrl/
+  sauce-ctrl.sqlite    # projects, settings, cache
 ```
 
 ## Related

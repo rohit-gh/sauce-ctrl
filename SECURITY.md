@@ -29,7 +29,7 @@ SauceControl runs **locally** on the developer's machine with access to:
 
 - The filesystem (git repositories the user adds)
 - Shell execution (`git`, `gh`, interactive terminal)
-- `~/.sauce-control/` SQLite database
+- `~/.sauce-ctrl/` SQLite database
 
 Treat SauceControl as a **trusted local tool** — only add repositories you trust,
 and run it on machines you control.
@@ -38,5 +38,5 @@ and run it on machines you control.
 
 - The terminal WebSocket server binds to a local port (`SAUCE_WS_PORT`, default `3009`).
   It is intended for localhost use during development.
-- GitHub tokens may be cached in `~/.sauce-control/sauce-control.sqlite` after `gh auth`.
+- GitHub tokens may be cached in `~/.sauce-ctrl/sauce-ctrl.sqlite` after `gh auth`.
   Protect this file like any other credential store.

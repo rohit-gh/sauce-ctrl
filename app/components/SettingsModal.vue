@@ -50,6 +50,17 @@ const theme = useThemeStore()
             </button>
           </div>
         </section>
+
+        <section class="mt-6 border-t border-ink-800 pt-4">
+          <h3 class="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Desktop app</h3>
+          <p class="mb-3 text-[11px] text-slate-500">
+            Install SauceControl as a standalone app that runs in its own window while the local
+            server works in the background.
+          </p>
+          <button class="btn-subtle" @click="ui.settingsOpen = false; ui.pwaInstallOpen = true">
+            Install as an app…
+          </button>
+        </section>
       </div>
 
       <div class="flex justify-end border-t border-ink-800 px-5 py-3">

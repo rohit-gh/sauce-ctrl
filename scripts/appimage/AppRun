@@ -1,0 +1,15 @@
+#!/bin/bash
+# AppRun — entrypoint executed when the AppImage is launched.
+set -euo pipefail
+
+HERE="$(dirname "$(readlink -f "${0}")")"
+APP_ROOT="${HERE}/usr/lib/sauce-ctrl"
+
+# Bundled Bun runtime takes precedence; host git/gh remain reachable via PATH.
+export PATH="${HERE}/usr/bin:${PATH}"
+
+# The Nitro terminal plugin resolves server/terminal-server.ts relative to cwd,
+# so the launcher must run from the app root.
+cd "${APP_ROOT}"
+
+exec "${HERE}/usr/bin/bun" --bun "${APP_ROOT}/launcher.ts" "$@"
