@@ -15,7 +15,7 @@ SauceControl runs as a local, desktop-style app: the browser renders the UI whil
 - **Staging & commit** — stage/unstage files and commit with a message
 - **Integrated terminal** — real PTY at the repo location (bottom panel)
 - **GitHub setup** — install/authenticate `gh` in an embedded terminal
-- **SQLite cache** — projects and settings in `~/.sauce-control/`
+- **SQLite cache** — projects and settings in `~/.sauce-ctrl/`
 
 ## Quick start
 
@@ -44,7 +44,7 @@ When it finishes, the AppImage is ready to run in **two places**:
 ~/Downloads/SauceControl-x86_64.AppImage
 ```
 
-The AppImage bundles SauceControl and the Bun runtime together. You still need `git` on your machine (and `gh` if you want GitHub features). Your projects and settings live in `~/.sauce-control/` as usual.
+The AppImage bundles SauceControl and the Bun runtime together. You still need `git` on your machine (and `gh` if you want GitHub features). Your projects and settings live in `~/.sauce-ctrl/` as usual.
 
 More detail — including what happens on launch and machines without FUSE — is in [Package as a Linux app](./docs/getting-started.md#run-as-a-standalone-app-appimage) in the getting-started guide.
 

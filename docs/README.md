@@ -24,8 +24,8 @@ On Linux you can also **`bun run build:appimage`** to produce a self-contained A
 ## User data (not in repo)
 
 ```
-~/.sauce-control/
-  sauce-control.sqlite    # projects, settings, cache
+~/.sauce-ctrl/
+  sauce-ctrl.sqlite    # projects, settings, cache
 ```
 
 ## Related

@@ -15,7 +15,7 @@
 
 ```bash
 git clone <your-repo-url>
-cd sauce-control
+cd sauce-ctrl
 bun install
 cp .env.example .env   # optional — defaults work for local dev
 ```
@@ -80,7 +80,7 @@ chmod +x release/SauceControl-x86_64.AppImage
 **Good to know:**
 
 - **`git` is still required** on the machine where you run the AppImage (`gh` too, if you use GitHub features). Those tools aren't bundled inside the image.
-- **Your data stays in** `~/.sauce-control/` — same as when you run from source.
+- **Your data stays in** `~/.sauce-ctrl/` — same as when you run from source.
 - **Bun is bundled** from whatever `bun` binary is on your `PATH` at build time.
 - **First build needs network** — `appimagetool` is downloaded once into `release/.tools/`.
 - **No FUSE?** Run with `./release/SauceControl-x86_64.AppImage --appimage-extract-and-run`.

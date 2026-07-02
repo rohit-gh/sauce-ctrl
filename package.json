@@ -1,5 +1,5 @@
 {
-  "name": "sauce-control",
+  "name": "sauce-ctrl",
   "version": "0.1.0",
   "description": "A browser-based Git GUI client — Git, but pleasant.",
   "type": "module",

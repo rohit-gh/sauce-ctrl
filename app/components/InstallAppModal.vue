@@ -25,7 +25,7 @@ async function doInstall() {
 
 const buildCmd = 'bun run build'
 const startCmd = 'bun run start'
-const bgCmd = 'nohup bun run start > ~/.sauce-control/server.log 2>&1 &'
+const bgCmd = 'nohup bun run start > ~/.sauce-ctrl/server.log 2>&1 &'
 </script>
 
 <template>

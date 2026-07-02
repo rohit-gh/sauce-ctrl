@@ -16,7 +16,7 @@ Guidance for AI coding agents working on SauceControl.
 - **Components**: one Nuxt component per UI concern in `app/components/`.
 - **Git**: CLI only via `server/utils/git.ts` — no NUL bytes in exec args.
 - **Terminal**: separate process `server/terminal-server.ts` — never inline `Bun.serve` WS in Nitro.
-- **DB**: `~/.sauce-control/sauce-control.sqlite` via `server/utils/db.ts`.
+- **DB**: `~/.sauce-ctrl/sauce-ctrl.sqlite` via `server/utils/db.ts`.
 
 ## Do not
 

@@ -15,7 +15,7 @@ ARCH="${ARCH:-x86_64}"
 # Note: `dist` in this repo is a symlink into .output/public, so build here.
 DIST="${ROOT}/release"
 APPDIR="${DIST}/AppDir"
-APP_LIB="${APPDIR}/usr/lib/sauce-control"
+APP_LIB="${APPDIR}/usr/lib/sauce-ctrl"
 TOOLS="${DIST}/.tools"
 TEMPLATE="${ROOT}/scripts/appimage"
 
@@ -58,8 +58,8 @@ cp "${TEMPLATE}/launcher.ts" "${APP_LIB}/launcher.ts"
 # AppRun + desktop entry + icon at the AppDir root.
 cp "${TEMPLATE}/AppRun" "${APPDIR}/AppRun"
 chmod +x "${APPDIR}/AppRun"
-cp "${TEMPLATE}/sauce-control.desktop" "${APPDIR}/sauce-control.desktop"
-cp "${ROOT}/public/pwa-512x512.png" "${APPDIR}/sauce-control.png"
+cp "${TEMPLATE}/sauce-ctrl.desktop" "${APPDIR}/sauce-ctrl.desktop"
+cp "${ROOT}/public/pwa-512x512.png" "${APPDIR}/sauce-ctrl.png"
 
 # --- 3. Fetch appimagetool ----------------------------------------------------
 mkdir -p "${TOOLS}"

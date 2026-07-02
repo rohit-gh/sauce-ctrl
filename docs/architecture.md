@@ -25,7 +25,7 @@
 └─────────────────────────────────────────────────────────────┘
           │                    │                    │
           ▼                    ▼                    ▼
-      git CLI               gh CLI          ~/.sauce-control/
+      git CLI               gh CLI          ~/.sauce-ctrl/
 ```
 
 ## Frontend layers

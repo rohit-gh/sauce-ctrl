@@ -480,7 +480,7 @@ export async function createBranchFromCurrent(
 ): Promise<{ branch: string; stashed: boolean }> {
   let stashed = false
   if (stash) {
-    stashed = await stashPush(dir, `sauce-control: before creating ${name}`)
+    stashed = await stashPush(dir, `sauce-ctrl: before creating ${name}`)
   }
   await runGit(dir, ['checkout', '-b', name])
   return { branch: await currentBranch(dir), stashed }

@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "sauce-control",
+      "name": "sauce-ctrl",
       "dependencies": {
         "@fontsource-variable/montserrat": "^5.2.8",
         "@fontsource/anonymous-pro": "^5.2.8",

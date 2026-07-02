@@ -118,7 +118,7 @@ async function main() {
       // "close the window = quit the app" lifecycle.
       const profileDir = join(
         process.env.HOME || '/tmp',
-        '.sauce-control',
+        '.sauce-ctrl',
         'browser-profile',
       )
       if (!existsSync(profileDir)) mkdirSync(profileDir, { recursive: true })

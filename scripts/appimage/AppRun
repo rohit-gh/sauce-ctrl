@@ -3,7 +3,7 @@
 set -euo pipefail
 
 HERE="$(dirname "$(readlink -f "${0}")")"
-APP_ROOT="${HERE}/usr/lib/sauce-control"
+APP_ROOT="${HERE}/usr/lib/sauce-ctrl"
 
 # Bundled Bun runtime takes precedence; host git/gh remain reachable via PATH.
 export PATH="${HERE}/usr/bin:${PATH}"
