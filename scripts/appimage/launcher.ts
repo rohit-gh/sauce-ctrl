@@ -106,6 +106,8 @@ async function main() {
     // falls back to the build-time default (3009) and the terminal never links.
     SAUCE_WS_PORT: String(wsPort),
     NUXT_PUBLIC_WS_PORT: String(wsPort),
+    // Tells the UI it's already the desktop app (hides "Install as an app").
+    NUXT_PUBLIC_DESKTOP_APP: 'true',
   }
 
   const server: Subprocess = Bun.spawn(

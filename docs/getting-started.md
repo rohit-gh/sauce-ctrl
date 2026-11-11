@@ -8,6 +8,8 @@
 | `git` | any recent | All repository operations |
 | `gh` | optional | GitHub auth/setup (installable from in-app modal) |
 | Linux | `libutil`, `setsid` | PTY allocation and job control |
+| macOS | Bun ≥ 1.3.5 | Native PTY (`Bun.spawn({ terminal })`) |
+| Rust (macOS desktop build only) | stable | Builds the Tauri 2 shell (`rustup`) |
 
 > **Important:** SauceCtrl must run under the **Bun runtime**, not Node. Plain `nuxt dev` under Node will fail on `bun:sqlite` / `bun:ffi`.
 
@@ -105,3 +107,30 @@ Copy `.env.example` to `.env` and adjust as needed. Only `SAUCE_WS_PORT` is Sauc
 | Terminal won't connect | Check port `3009` is free; see `pgrep -af terminal-server` |
 | Orphan terminal on `3009` after crash | `kill` the `terminal-server.ts` process, restart dev |
 | Git command fails | Repo path must exist and be inside a git work tree |
+
+## Run as a standalone app (macOS)
+
+### Tauri 2 app (recommended)
+
+```bash
+bun install
+bun run tauri:build
+```
+
+Output (Apple Silicon shown; Intel builds on an Intel Mac):
+
+- `src-tauri/target/release/bundle/macos/SauceCtrl.app`
+- `src-tauri/target/release/bundle/dmg/SauceCtrl_<version>_aarch64.dmg`
+
+`bun run tauri:dev` opens a native window on the Nuxt dev server (hot reload).
+
+Notes:
+
+- The app bundles Bun; **`git` is still required** (`gh` optional) and is deliberately *not* bundled. If it's missing, SauceCtrl shows a dialog on launch with an **Install Git** button that opens Apple's installer for the Command Line Tools (or run `brew install git`); the GitHub Setup panel shows the same instructions, and git is picked up without restarting. The app resolves your login-shell `PATH`, so Homebrew tools are found even when launched from Finder.
+- Builds are **ad-hoc signed, not notarized**. On another Mac, right-click → Open the first time (or `xattr -dr com.apple.quarantine SauceCtrl.app`). Notarizing needs an Apple Developer ID (set `signingIdentity` in `src-tauri/tauri.conf.json` and the `APPLE_*` env vars).
+- If the app lives in `~/Documents`/`~/Desktop`, macOS asks for folder access on first launch and the app waits for your answer. Move it to `/Applications` to avoid this.
+- Server log: `~/Library/Logs/SauceCtrl/server.log`.
+
+### Without Rust: `bun run build:dmg`
+
+Builds `release/SauceCtrl-<arch>.dmg` with a small launcher that opens a Chromium-family browser in `--app` mode (falls back to your default browser).

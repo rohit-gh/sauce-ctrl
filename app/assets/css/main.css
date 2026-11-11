@@ -10,9 +10,12 @@
 @tailwind utilities;
 
 /*
- * Theme palettes. Each variable holds space-separated RGB channels so Tailwind's
- * opacity modifiers keep working (see tailwind.config.ts). Charcoal is the default
- * and also applies when no data-theme is set (avoids a flash before hydration).
+ * Theme palettes — generated from a contrast-checked source (every text/background
+ * pair meets WCAG 2.1 AA: 4.5:1 text, 3:1 borders/graphics). Each variable holds
+ * space-separated RGB channels so Tailwind opacity modifiers work (tailwind.config.ts).
+ * Tailwind's `white` / `slate-100…600` / `red|green|amber|blue-200…400` are mapped to
+ * these tokens, so light themes recolour existing utilities automatically.
+ * Charcoal is the default and also applies before data-theme is set.
  */
 :root,
 [data-theme='charcoal'] {
@@ -24,8 +27,38 @@
   --ink-700: 55 55 61;
   --ink-600: 70 70 77;
   --ink-500: 88 88 96;
+  --ink-line: 110 110 119;
   --accent: 86 182 194;
   --accent-soft: 63 151 163;
+  --accent-strong: 150 210 217;
+  --on-accent: 11 26 29;
+  --fg-strong: 255 255 255;
+  --fg-100: 241 245 249;
+  --fg-200: 226 232 240;
+  --fg-300: 203 213 225;
+  --fg-400: 170 182 198;
+  --fg-500: 151 163 180;
+  --fg-600: 138 149 166;
+  --red-200: 254 202 202;
+  --red-300: 252 165 165;
+  --red-400: 248 113 113;
+  --green-200: 187 247 208;
+  --green-300: 134 239 172;
+  --green-400: 74 222 128;
+  --amber-200: 253 230 138;
+  --amber-300: 252 211 77;
+  --amber-400: 251 191 36;
+  --blue-200: 191 219 254;
+  --blue-300: 147 197 253;
+  --blue-400: 96 165 250;
+  --lane-0: 79 157 255;
+  --lane-1: 242 104 108;
+  --lane-2: 79 206 143;
+  --lane-3: 245 167 66;
+  --lane-4: 180 124 255;
+  --lane-5: 63 199 212;
+  --lane-6: 232 110 194;
+  --lane-7: 158 203 59;
 }
 
 [data-theme='dark-blue'] {
@@ -37,8 +70,210 @@
   --ink-700: 35 43 56;
   --ink-600: 46 56 71;
   --ink-500: 59 71 87;
+  --ink-line: 90 105 127;
   --accent: 79 157 255;
-  --accent-soft: 43 111 209;
+  --accent-soft: 65 137 238;
+  --accent-strong: 130 185 255;
+  --on-accent: 6 16 31;
+  --fg-strong: 255 255 255;
+  --fg-100: 241 245 249;
+  --fg-200: 226 232 240;
+  --fg-300: 203 213 225;
+  --fg-400: 170 182 198;
+  --fg-500: 151 163 180;
+  --fg-600: 138 149 166;
+  --red-200: 254 202 202;
+  --red-300: 252 165 165;
+  --red-400: 248 113 113;
+  --green-200: 187 247 208;
+  --green-300: 134 239 172;
+  --green-400: 74 222 128;
+  --amber-200: 253 230 138;
+  --amber-300: 252 211 77;
+  --amber-400: 251 191 36;
+  --blue-200: 191 219 254;
+  --blue-300: 147 197 253;
+  --blue-400: 96 165 250;
+  --lane-0: 79 157 255;
+  --lane-1: 242 104 108;
+  --lane-2: 79 206 143;
+  --lane-3: 245 167 66;
+  --lane-4: 180 124 255;
+  --lane-5: 63 199 212;
+  --lane-6: 232 110 194;
+  --lane-7: 158 203 59;
+}
+
+[data-theme='forest'] {
+  color-scheme: dark;
+  --ink-950: 14 21 18;
+  --ink-900: 18 28 23;
+  --ink-850: 23 35 29;
+  --ink-800: 29 43 36;
+  --ink-700: 40 58 49;
+  --ink-600: 51 74 63;
+  --ink-500: 64 89 77;
+  --ink-line: 87 113 100;
+  --accent: 79 209 161;
+  --accent-soft: 47 174 128;
+  --accent-strong: 132 223 189;
+  --on-accent: 6 32 22;
+  --fg-strong: 255 255 255;
+  --fg-100: 241 245 249;
+  --fg-200: 226 232 240;
+  --fg-300: 203 213 225;
+  --fg-400: 172 192 182;
+  --fg-500: 152 173 162;
+  --fg-600: 138 160 148;
+  --red-200: 254 202 202;
+  --red-300: 252 165 165;
+  --red-400: 248 113 113;
+  --green-200: 187 247 208;
+  --green-300: 134 239 172;
+  --green-400: 74 222 128;
+  --amber-200: 253 230 138;
+  --amber-300: 252 211 77;
+  --amber-400: 251 191 36;
+  --blue-200: 191 219 254;
+  --blue-300: 147 197 253;
+  --blue-400: 96 165 250;
+  --lane-0: 79 157 255;
+  --lane-1: 242 104 108;
+  --lane-2: 79 206 143;
+  --lane-3: 245 167 66;
+  --lane-4: 180 124 255;
+  --lane-5: 63 199 212;
+  --lane-6: 232 110 194;
+  --lane-7: 158 203 59;
+}
+
+[data-theme='plum'] {
+  color-scheme: dark;
+  --ink-950: 21 16 25;
+  --ink-900: 27 21 33;
+  --ink-850: 34 26 41;
+  --ink-800: 41 31 50;
+  --ink-700: 54 42 66;
+  --ink-600: 68 53 86;
+  --ink-500: 84 66 105;
+  --ink-line: 116 100 135;
+  --accent: 224 142 240;
+  --accent-soft: 194 111 211;
+  --accent-strong: 232 171 244;
+  --on-accent: 34 8 43;
+  --fg-strong: 255 255 255;
+  --fg-100: 241 245 249;
+  --fg-200: 226 232 240;
+  --fg-300: 203 213 225;
+  --fg-400: 188 176 201;
+  --fg-500: 169 156 184;
+  --fg-600: 155 142 171;
+  --red-200: 254 202 202;
+  --red-300: 252 165 165;
+  --red-400: 248 113 113;
+  --green-200: 187 247 208;
+  --green-300: 134 239 172;
+  --green-400: 74 222 128;
+  --amber-200: 253 230 138;
+  --amber-300: 252 211 77;
+  --amber-400: 251 191 36;
+  --blue-200: 191 219 254;
+  --blue-300: 147 197 253;
+  --blue-400: 96 165 250;
+  --lane-0: 79 157 255;
+  --lane-1: 242 104 108;
+  --lane-2: 79 206 143;
+  --lane-3: 245 167 66;
+  --lane-4: 180 124 255;
+  --lane-5: 63 199 212;
+  --lane-6: 232 110 194;
+  --lane-7: 158 203 59;
+}
+
+[data-theme='daylight'] {
+  color-scheme: light;
+  --ink-950: 238 241 245;
+  --ink-900: 248 249 251;
+  --ink-850: 255 255 255;
+  --ink-800: 229 233 239;
+  --ink-700: 213 219 228;
+  --ink-600: 201 208 219;
+  --ink-500: 182 191 204;
+  --ink-line: 127 138 155;
+  --accent: 29 88 199;
+  --accent-soft: 22 68 154;
+  --accent-strong: 22 68 153;
+  --on-accent: 255 255 255;
+  --fg-strong: 11 18 32;
+  --fg-100: 20 28 43;
+  --fg-200: 31 41 55;
+  --fg-300: 47 58 74;
+  --fg-400: 63 74 91;
+  --fg-500: 77 88 104;
+  --fg-600: 86 97 115;
+  --red-200: 153 27 27;
+  --red-300: 169 29 29;
+  --red-400: 185 28 28;
+  --green-200: 20 83 45;
+  --green-300: 22 101 52;
+  --green-400: 18 108 51;
+  --amber-200: 120 53 15;
+  --amber-300: 127 69 7;
+  --amber-400: 161 79 5;
+  --blue-200: 30 58 138;
+  --blue-300: 30 64 175;
+  --blue-400: 29 78 216;
+  --lane-0: 29 100 216;
+  --lane-1: 200 50 58;
+  --lane-2: 22 128 74;
+  --lane-3: 178 90 0;
+  --lane-4: 122 63 214;
+  --lane-5: 11 127 140;
+  --lane-6: 184 50 127;
+  --lane-7: 90 122 18;
+}
+
+[data-theme='sand'] {
+  color-scheme: light;
+  --ink-950: 242 236 226;
+  --ink-900: 250 246 239;
+  --ink-850: 255 253 249;
+  --ink-800: 235 226 212;
+  --ink-700: 221 208 189;
+  --ink-600: 211 196 174;
+  --ink-500: 196 179 152;
+  --ink-line: 143 127 102;
+  --accent: 148 63 27;
+  --accent-soft: 122 50 20;
+  --accent-strong: 114 49 21;
+  --on-accent: 255 255 255;
+  --fg-strong: 28 20 12;
+  --fg-100: 37 27 17;
+  --fg-200: 51 39 26;
+  --fg-300: 67 53 38;
+  --fg-400: 82 67 49;
+  --fg-500: 93 78 59;
+  --fg-600: 102 86 63;
+  --red-200: 153 27 27;
+  --red-300: 169 29 29;
+  --red-400: 185 28 28;
+  --green-200: 20 83 45;
+  --green-300: 22 101 52;
+  --green-400: 18 108 51;
+  --amber-200: 120 53 15;
+  --amber-300: 127 69 7;
+  --amber-400: 161 79 5;
+  --blue-200: 30 58 138;
+  --blue-300: 30 64 175;
+  --blue-400: 29 78 216;
+  --lane-0: 29 100 216;
+  --lane-1: 200 50 58;
+  --lane-2: 22 128 74;
+  --lane-3: 178 90 0;
+  --lane-4: 122 63 214;
+  --lane-5: 11 127 140;
+  --lane-6: 184 50 127;
+  --lane-7: 90 122 18;
 }
 
 html,
@@ -75,7 +310,7 @@ body {
     @apply inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-accent text-white hover:bg-accent-soft;
+    @apply btn bg-accent text-on-accent hover:bg-accent-soft;
   }
   .btn-ghost {
     @apply btn text-slate-300 hover:bg-ink-700 hover:text-white;
@@ -84,6 +319,6 @@ body {
     @apply btn bg-ink-700 text-slate-200 hover:bg-ink-600;
   }
   .input {
-    @apply w-full rounded-md border border-ink-600 bg-ink-850 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-accent focus:outline-none;
+    @apply w-full rounded-md border border-ink-line bg-ink-850 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-accent focus:outline-none;
   }
 }

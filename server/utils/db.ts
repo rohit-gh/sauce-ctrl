@@ -38,6 +38,12 @@ export function getDb(): Database {
     );
   `)
 
+  // Migration: pinned projects stay at the top of the sidebar (pin order).
+  const cols = db.query('PRAGMA table_info(projects)').all() as { name: string }[]
+  if (!cols.some((c) => c.name === 'pinned_at')) {
+    db.exec('ALTER TABLE projects ADD COLUMN pinned_at INTEGER')
+  }
+
   return db
 }
 
@@ -47,10 +53,11 @@ export interface ProjectRow {
   path: string
   added_at: number
   last_opened: number | null
+  pinned_at?: number | null
 }
 
 export function listProjects(): ProjectRow[] {
-  return getDb().query('SELECT * FROM projects ORDER BY last_opened DESC, added_at DESC').all() as ProjectRow[]
+  return getDb().query('SELECT * FROM projects ORDER BY pinned_at IS NULL, pinned_at ASC, last_opened DESC, added_at DESC').all() as ProjectRow[]
 }
 
 export function addProject(row: ProjectRow) {
@@ -67,8 +74,19 @@ export function addProject(row: ProjectRow) {
     })
 }
 
+export function getProjectByPath(path: string): ProjectRow | null {
+  return (getDb().query('SELECT * FROM projects WHERE path = $path').get({ $path: path }) as ProjectRow | undefined) ?? null
+}
+
 export function removeProject(id: string) {
   getDb().query('DELETE FROM projects WHERE id = $id').run({ $id: id })
+}
+
+/** Pin (or unpin) a project so it stays at the top of the sidebar. */
+export function setProjectPinned(id: string, pinned: boolean) {
+  getDb()
+    .query('UPDATE projects SET pinned_at = $p WHERE id = $id')
+    .run({ $p: pinned ? Date.now() : null, $id: id })
 }
 
 export function touchProject(id: string) {

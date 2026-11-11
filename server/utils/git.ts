@@ -2,12 +2,49 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
+import { join } from 'node:path'
 
 const execFileAsync = promisify(execFile)
 
 export interface GitResult {
   stdout: string
   stderr: string
+}
+
+/** How to get git on this platform (git is deliberately not bundled with the app). */
+export interface GitInstallHint {
+  command: string
+  note: string
+}
+
+const MAC_GIT_HINT: GitInstallHint = {
+  command: 'xcode-select --install',
+  note: 'Opens Apple\'s installer for the Command Line Tools, which include Git. Or, if you use Homebrew: brew install git',
+}
+
+export const GIT_MISSING_MESSAGE =
+  'Git is not installed. On macOS run "xcode-select --install" (opens Apple\'s installer) or "brew install git", then try again.'
+
+let gitFound = false
+
+/**
+ * Is a usable `git` available? Only macOS needs a special check: without the
+ * Command Line Tools, /usr/bin/git is a stub that pops Apple's installer dialog
+ * every time it is executed, so we must not run it just to probe. Positive
+ * results are cached; negatives are re-checked so an install is noticed live.
+ */
+export async function gitAvailable(): Promise<boolean> {
+  if (gitFound || process.platform !== 'darwin') return true
+  for (const dir of (process.env.PATH || '').split(':').filter(Boolean)) {
+    const candidate = join(dir, 'git')
+    if (!existsSync(candidate)) continue
+    if (candidate !== '/usr/bin/git') return (gitFound = true)
+    try {
+      const { stdout } = await execFileAsync('/usr/bin/xcode-select', ['-p'])
+      if (existsSync(join(stdout.trim(), 'usr/bin/git'))) return (gitFound = true)
+    } catch {}
+  }
+  return false
 }
 
 /**
@@ -28,6 +65,10 @@ function assertNotOption(value: string, label = 'value'): string {
 export async function runGit(cwd: string, args: string[]): Promise<GitResult> {
   if (!existsSync(cwd)) {
     throw new Error(`Directory does not exist: ${cwd}`)
+  }
+  // createError (not a plain Error) so the message reaches the UI instead of a generic 500.
+  if (!(await gitAvailable())) {
+    throw createError({ statusCode: 424, statusMessage: 'Git is not installed', message: GIT_MISSING_MESSAGE })
   }
   try {
     const { stdout, stderr } = await execFileAsync('git', args, {
@@ -63,6 +104,8 @@ export interface GitEnvStatus {
   userEmail: string | null
   /** True only when git is installed AND both name and email are configured. */
   configured: boolean
+  /** Platform-specific install instructions when git is missing (null: use generic steps). */
+  installHint: GitInstallHint | null
 }
 
 /**
@@ -73,6 +116,16 @@ export interface GitEnvStatus {
  * rather than any single repository's local override.
  */
 export async function gitEnvStatus(): Promise<GitEnvStatus> {
+  const missing: GitEnvStatus = {
+    installed: false,
+    version: null,
+    userName: null,
+    userEmail: null,
+    configured: false,
+    installHint: process.platform === 'darwin' ? MAC_GIT_HINT : null,
+  }
+  if (!(await gitAvailable())) return missing
+
   let version: string | null = null
   try {
     const { stdout } = await execFileAsync('git', ['--version'], {
@@ -80,7 +133,7 @@ export async function gitEnvStatus(): Promise<GitEnvStatus> {
     })
     version = stdout.replace(/^git version/i, '').trim() || null
   } catch {
-    return { installed: false, version: null, userName: null, userEmail: null, configured: false }
+    return missing
   }
 
   const read = async (key: string): Promise<string | null> => {
@@ -96,7 +149,14 @@ export async function gitEnvStatus(): Promise<GitEnvStatus> {
   }
 
   const [userName, userEmail] = await Promise.all([read('user.name'), read('user.email')])
-  return { installed: true, version, userName, userEmail, configured: Boolean(userName && userEmail) }
+  return {
+    installed: true,
+    version,
+    userName,
+    userEmail,
+    configured: Boolean(userName && userEmail),
+    installHint: null,
+  }
 }
 
 export async function isGitRepo(dir: string): Promise<boolean> {

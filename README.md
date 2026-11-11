@@ -51,6 +51,15 @@ The AppImage bundles SauceCtrl and the Bun runtime together. You still need `git
 
 More detail — including what happens on launch and machines without FUSE — is in [Package as a Linux app](./docs/getting-started.md#run-as-a-standalone-app-appimage) in the getting-started guide.
 
+## Run as a standalone app (macOS)
+
+```bash
+bun install
+bun run tauri:build   # Tauri 2 app + DMG; needs Rust (https://rustup.rs)
+```
+
+You get `src-tauri/target/release/bundle/macos/SauceCtrl.app` and a `.dmg` next to it. `git` is still required on the machine (and `gh` for GitHub features). Builds are ad-hoc signed (not notarized) — see [docs/getting-started.md](./docs/getting-started.md#run-as-a-standalone-app-macos).
+
 ## Documentation
 
 | Doc | Description |
@@ -66,7 +75,7 @@ More detail — including what happens on launch and machines without FUSE — i
 
 - [Bun](https://bun.sh) ≥ 1.2
 - `git`
-- Linux with `libutil` and `setsid` (PTY)
+- Linux with `libutil` and `setsid` (PTY), or macOS with Bun ≥ 1.3.5
 - `gh` optional (installable from the app)
 
 ## Environment

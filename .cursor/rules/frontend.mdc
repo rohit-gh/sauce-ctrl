@@ -24,9 +24,16 @@ Load repo data when `projects.selected.path` changes (`app/app.vue` watcher).
 
 ## Styling
 
-- Dark GitKraken-inspired palette: `ink-*`, `accent` (see `tailwind.config.ts`).
+- Themes are CSS variables in `app/assets/css/main.css` (`[data-theme=…]`, 4 dark + 2 light). Tailwind's `white`, `slate-100…600`, `red|green|amber|blue-200…400`, `ink-*`, `accent`, `accent-strong`, `on-accent`, `ink-line` map to them — so use those utilities, never hex colours.
+- Text on `bg-accent` → `text-on-accent`; accent text on an accent tint → `text-accent-strong`; input/checkbox borders → `border-ink-line`.
+- Every token pair is WCAG AA contrast-checked; adding a theme means adding a full block of variables.
 - Utility classes: `.btn-primary`, `.btn-ghost`, `.btn-subtle`, `.input` in `app/assets/css/main.css`.
 - No inline style sprawl — prefer Tailwind utilities.
+
+## Dialogs
+
+- Never use `window.alert` / `confirm` / `prompt`: the Tauri app's WKWebView doesn't implement them (alert shows nothing, confirm returns `false`, prompt returns `null`).
+- Use `appAlert`, `appConfirm`, `appPrompt`, `alertError` (`app/composables/useDialog.ts`), rendered by `AppDialog.vue`.
 
 ## API calls
 

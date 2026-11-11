@@ -21,25 +21,40 @@ async function run(action: () => Promise<void>) {
   try {
     await action()
   } catch (err: any) {
-    alert(err?.data?.statusMessage || err?.message || 'Git operation failed')
+    alertError(err, 'Git operation failed')
   }
 }
 
-function reset(mode: 'soft' | 'mixed' | 'hard') {
-  const label = mode === 'hard' ? 'HARD reset' : `${mode} reset`
-  if (mode === 'hard' && !confirm(`Hard reset to ${props.commit.abbrevHash}? This discards uncommitted changes.`)) return
-  if (mode !== 'hard' && !confirm(`${label} to ${props.commit.abbrevHash}?`)) return
-  run(() => repo.resetCommit(props.commit.hash, mode))
+async function reset(mode: 'soft' | 'mixed' | 'hard') {
+  // Close the menu first; the dialog outlives it.
+  const commit = props.commit
+  emit('close')
+  const ok =
+    mode === 'hard'
+      ? await appConfirm(`Hard reset to ${commit.abbrevHash}? This discards uncommitted changes.`, {
+          title: 'Hard reset?',
+          confirmLabel: 'Hard reset',
+          danger: true,
+        })
+      : await appConfirm(`${mode} reset to ${commit.abbrevHash}?`, { title: 'Reset branch?', confirmLabel: 'Reset' })
+  if (!ok) return
+  run(() => repo.resetCommit(commit.hash, mode))
 }
 
 function cherryPick() {
   run(() => repo.cherryPickCommit(props.commit.hash))
 }
 
-function createBranch() {
-  const name = prompt(`New branch name at ${props.commit.abbrevHash}:`)
+async function createBranch() {
+  const commit = props.commit
+  emit('close')
+  const name = await appPrompt(`New branch name at ${commit.abbrevHash}:`, {
+    title: 'Create branch',
+    confirmLabel: 'Create & checkout',
+    placeholder: 'feature/my-branch',
+  })
   if (!name?.trim()) return
-  run(() => repo.createBranchAtCommit(name.trim(), props.commit.hash, true))
+  run(() => repo.createBranchAtCommit(name.trim(), commit.hash, true))
 }
 
 function onDocClick(e: MouseEvent) {

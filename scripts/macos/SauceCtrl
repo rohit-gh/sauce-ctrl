@@ -1,0 +1,16 @@
+#!/bin/bash
+# SauceCtrl.app entrypoint (Contents/MacOS/SauceCtrl).
+set -euo pipefail
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+CONTENTS="$(cd "${HERE}/.." && pwd)"
+RESOURCES="${CONTENTS}/Resources"
+APP_ROOT="${RESOURCES}/app"
+
+# Bundled Bun takes precedence; host git/gh remain reachable via PATH.
+export PATH="${RESOURCES}/bin:${PATH}"
+
+# Terminal plugin resolves server/terminal-server.ts relative to cwd.
+cd "${APP_ROOT}"
+
+exec "${RESOURCES}/bin/bun" --bun "${APP_ROOT}/launcher.ts" "$@"

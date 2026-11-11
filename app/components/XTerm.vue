@@ -17,11 +17,34 @@ function themeColors() {
     const v = styles.getPropertyValue(name).trim()
     return v ? `rgb(${v})` : fallback
   }
+  const fg = channels('--fg-300', '#cbd5e1')
+  const strong = channels('--fg-strong', '#ffffff')
+  const light = theme.active.mode === 'light'
   return {
     background: channels('--ink-950', '#0b0e14'),
-    foreground: '#cbd5e1',
+    foreground: fg,
     cursor: channels('--accent', '#4f9dff'),
+    cursorAccent: channels('--ink-950', '#0b0e14'),
     selectionBackground: channels('--ink-600', '#2e3847'),
+    selectionForeground: strong,
+    // ANSI colours from the theme's status tokens so program output stays
+    // readable on light backgrounds too ("white" text becomes dark there).
+    black: light ? strong : channels('--ink-700', '#232b38'),
+    brightBlack: channels('--fg-500', '#97a3b4'),
+    red: channels('--red-400', '#f87171'),
+    brightRed: channels('--red-300', '#fca5a5'),
+    green: channels('--green-400', '#4ade80'),
+    brightGreen: channels('--green-300', '#86efac'),
+    yellow: channels('--amber-400', '#fbbf24'),
+    brightYellow: channels('--amber-300', '#fcd34d'),
+    blue: channels('--blue-400', '#60a5fa'),
+    brightBlue: channels('--blue-300', '#93c5fd'),
+    magenta: channels('--lane-6', '#e86ec2'),
+    brightMagenta: channels('--lane-4', '#b47cff'),
+    cyan: channels('--lane-5', '#3fc7d4'),
+    brightCyan: channels('--accent', '#56b6c2'),
+    white: fg,
+    brightWhite: strong,
   }
 }
 

@@ -4,22 +4,55 @@ export interface ThemeOption {
   id: string
   name: string
   description: string
+  mode: 'dark' | 'light'
   // Small swatch preview: [background, surface, accent]
   swatch: [string, string, string]
 }
 
+// Colours live in app/assets/css/main.css ([data-theme='…']); every text/background
+// pair there is checked for WCAG AA contrast.
 export const THEMES: ThemeOption[] = [
   {
     id: 'charcoal',
     name: 'Charcoal',
     description: 'Neutral charcoal gray with a calm teal accent.',
+    mode: 'dark',
     swatch: ['#18181b', '#2a2a2f', '#56b6c2'],
   },
   {
     id: 'dark-blue',
     name: 'Dark Blue',
     description: 'The original deep navy palette with a bright blue accent.',
+    mode: 'dark',
     swatch: ['#0b0e14', '#1a2029', '#4f9dff'],
+  },
+  {
+    id: 'forest',
+    name: 'Forest',
+    description: 'Deep evergreen with a fresh mint accent.',
+    mode: 'dark',
+    swatch: ['#0e1512', '#1d2b24', '#4fd1a1'],
+  },
+  {
+    id: 'plum',
+    name: 'Plum',
+    description: 'Dusky aubergine with a soft orchid accent.',
+    mode: 'dark',
+    swatch: ['#151019', '#291f32', '#e08ef0'],
+  },
+  {
+    id: 'daylight',
+    name: 'Daylight',
+    description: 'Crisp cool white with a confident blue accent.',
+    mode: 'light',
+    swatch: ['#eef1f5', '#ffffff', '#1d58c7'],
+  },
+  {
+    id: 'sand',
+    name: 'Sand',
+    description: 'Warm paper tones with a terracotta accent.',
+    mode: 'light',
+    swatch: ['#f2ece2', '#fffdf9', '#943f1b'],
   },
 ]
 

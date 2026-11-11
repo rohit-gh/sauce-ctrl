@@ -11,6 +11,9 @@
     "preview": "bun --bun nuxt preview",
     "start": "bun --bun .output/server/index.mjs",
     "build:appimage": "bash scripts/build-appimage.sh",
+    "build:dmg": "bash scripts/build-dmg.sh",
+    "tauri:dev": "bash scripts/tauri/prepare.sh dev && tauri dev",
+    "tauri:build": "bash scripts/tauri/prepare.sh && tauri build",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
@@ -29,6 +32,7 @@
     "bun": ">=1.2.0"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2",
     "@vite-pwa/nuxt": "^1.1.1"
   }
 }
