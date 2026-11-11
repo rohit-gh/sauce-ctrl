@@ -15,7 +15,7 @@ async function switchTo(name: string) {
     await repo.checkout(name)
     await projects.fetch()
   } catch (err: any) {
-    alert(err?.data?.statusMessage || err?.message || 'Checkout failed')
+    alertError(err, 'Checkout failed')
   }
 }
 
@@ -29,16 +29,16 @@ async function popStash(index: number) {
   try {
     await repo.stashPop(index)
   } catch (err: any) {
-    alert(err?.data?.statusMessage || err?.message || 'Failed to restore stash')
+    alertError(err, 'Failed to restore stash')
   }
 }
 
 async function dropStash(index: number) {
-  if (!confirm('Discard this stash permanently?')) return
+  if (!(await appConfirm('Discard this stash permanently?', { title: 'Drop stash?', confirmLabel: 'Drop', danger: true }))) return
   try {
     await repo.stashDrop(index)
   } catch (err: any) {
-    alert(err?.data?.statusMessage || err?.message || 'Failed to drop stash')
+    alertError(err, 'Failed to drop stash')
   }
 }
 

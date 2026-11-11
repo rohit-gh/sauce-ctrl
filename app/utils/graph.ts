@@ -1,15 +1,7 @@
 import type { CommitNode } from '~/stores/repo'
 
-export const GRAPH_COLORS = [
-  '#4f9dff',
-  '#f2686c',
-  '#4fce8f',
-  '#f5a742',
-  '#b47cff',
-  '#3fc7d4',
-  '#e86ec2',
-  '#9ecb3b',
-]
+// Per-theme lane colours (--lane-0…7 in main.css; ≥3:1 against the background).
+export const GRAPH_COLORS = Array.from({ length: 8 }, (_, i) => `rgb(var(--lane-${i}))`)
 
 export interface GraphNode {
   hash: string

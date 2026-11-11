@@ -36,7 +36,7 @@ const bgCmd = 'nohup bun run start > ~/.sauce-ctrl/server.log 2>&1 &'
     <div class="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-ink-700 bg-ink-900 shadow-2xl">
       <div class="flex items-center justify-between border-b border-ink-800 px-5 py-4">
         <div class="flex items-center gap-2">
-          <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-accent-soft text-xs font-bold text-white">
+          <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-accent-soft text-xs font-bold text-on-accent">
             S
           </div>
           <h2 class="text-base font-semibold text-white">Install as an app</h2>

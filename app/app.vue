@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { PANEL } from '~/stores/ui'
+
 const projects = useProjectsStore()
 const repo = useRepoStore()
 const ui = useUiStore()
@@ -50,29 +52,62 @@ onMounted(() => {
 
 <template>
   <div class="flex h-screen w-screen overflow-hidden bg-ink-950 text-slate-200">
-    <Sidebar />
+    <Sidebar :style="{ width: `${ui.sidebarWidth}px` }" />
+    <ResizeHandle
+      panel="left"
+      label="Resize sidebar"
+      :value="ui.sidebarWidth"
+      :min="PANEL.sidebar.min"
+      :max="PANEL.sidebar.max"
+      :default="PANEL.sidebar.default"
+      @resize="ui.setPanelWidth('sidebar', $event)"
+    />
 
     <div class="flex min-w-0 flex-1 flex-col">
-      <AppHeader />
+      <TabBar />
 
-      <div v-if="projects.selected" class="flex min-h-0 flex-1">
-        <main class="min-w-0 flex-1 border-r border-ink-800">
-          <CommitGraph />
-        </main>
-        <aside class="flex w-[420px] shrink-0 flex-col bg-ink-900">
-          <DetailPanel />
-        </aside>
+      <div
+        v-if="projects.selected"
+        id="repo-panel"
+        role="tabpanel"
+        :aria-labelledby="`tab-${projects.selected.id}`"
+        class="flex min-h-0 flex-1 flex-col"
+      >
+        <AppHeader />
+        <div class="flex min-h-0 flex-1">
+          <main class="min-w-0 flex-1">
+            <CommitGraph />
+          </main>
+          <ResizeHandle
+            panel="right"
+            label="Resize details panel"
+            :value="ui.detailWidth"
+            :min="PANEL.detail.min"
+            :max="PANEL.detail.max"
+            :default="PANEL.detail.default"
+            @resize="ui.setPanelWidth('detail', $event)"
+          />
+          <aside
+            class="flex shrink-0 flex-col bg-ink-900"
+            :style="{ width: `${ui.detailWidth}px` }"
+            aria-label="Details"
+          >
+            <DetailPanel />
+          </aside>
+        </div>
+        <TerminalPanel v-if="ui.terminalOpen" />
       </div>
 
+      <NoRepoOpen v-else-if="projects.projects.length" />
       <EmptyState v-else />
-
-      <TerminalPanel v-if="ui.terminalOpen && projects.selected" />
     </div>
 
     <GhSetup v-if="ui.ghSetupOpen" />
     <GhCloneModal v-if="ui.ghCloneOpen" />
     <SettingsModal v-if="ui.settingsOpen" />
     <InstallAppModal v-if="ui.pwaInstallOpen" />
+    <RepoDiscoveryModal v-if="ui.repoDiscoveryOpen" />
     <UnsupportedRemoteModal />
+    <AppDialog />
   </div>
 </template>

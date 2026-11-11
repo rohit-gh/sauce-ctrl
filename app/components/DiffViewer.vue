@@ -13,7 +13,7 @@ const lines = computed(() => parseUnifiedDiff(props.diff))
 function lineClass(type: string) {
   if (type === 'add') return 'bg-green-500/15 text-green-200'
   if (type === 'del') return 'bg-red-500/15 text-red-200'
-  if (type === 'hunk') return 'bg-accent/10 text-accent font-medium'
+  if (type === 'hunk') return 'bg-accent/10 text-accent-strong font-medium'
   if (type === 'meta') return 'text-slate-500'
   return 'text-slate-300'
 }

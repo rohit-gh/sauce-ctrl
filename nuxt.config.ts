@@ -13,6 +13,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
+      htmlAttrs: { lang: 'en' },
       title: 'SauceCtrl',
       meta: [
         { charset: 'utf-8' },
@@ -28,6 +29,8 @@ export default defineNuxtConfig({
     public: {
       // Dedicated port for the interactive terminal WebSocket server.
       wsPort: Number(process.env.SAUCE_WS_PORT || 3009),
+      // Set at runtime (NUXT_PUBLIC_DESKTOP_APP=true) by the desktop launchers.
+      desktopApp: false,
     },
   },
 

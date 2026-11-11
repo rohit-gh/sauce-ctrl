@@ -101,7 +101,7 @@ function openContextMenu(e: MouseEvent, commit: (typeof repo.commits)[0]) {
             v-for="(e, i) in layout.edges"
             :key="'e' + i"
             :d="edgePath(e)"
-            :stroke="e.color"
+            :style="{ stroke: e.color }"
             stroke-width="2"
             fill="none"
           />
@@ -111,8 +111,7 @@ function openContextMenu(e: MouseEvent, commit: (typeof repo.commits)[0]) {
             :cx="x(n.col)"
             :cy="y(n.row)"
             :r="DOT_R"
-            :fill="repo.selectedHash === n.hash ? '#fff' : n.color"
-            :stroke="n.color"
+            :style="{ fill: repo.selectedHash === n.hash ? 'rgb(var(--fg-strong))' : n.color, stroke: n.color }"
             stroke-width="2.5"
           />
         </svg>
@@ -134,7 +133,7 @@ function openContextMenu(e: MouseEvent, commit: (typeof repo.commits)[0]) {
                   class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
                   :class="
                     chip.isHead
-                      ? 'bg-accent/25 text-accent'
+                      ? 'bg-accent/25 text-accent-strong'
                       : chip.isTag
                         ? 'bg-amber-400/20 text-amber-300'
                         : chip.isRemote

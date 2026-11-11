@@ -10,20 +10,28 @@ import type { Subprocess } from 'bun'
  * non-blocking FFI syscalls. Window resizing uses `ioctl(TIOCSWINSZ)`.
  */
 
-const libutil = dlopen('libutil.so.1', {
-  openpty: {
-    args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr],
-    returns: FFIType.int,
-  },
-})
+function loadLinuxLibs() {
+  const libutil = dlopen('libutil.so.1', {
+    openpty: {
+      args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr],
+      returns: FFIType.int,
+    },
+  })
+  const libc = dlopen('libc.so.6', {
+    read: { args: [FFIType.int, FFIType.ptr, FFIType.u64], returns: FFIType.i64 },
+    write: { args: [FFIType.int, FFIType.ptr, FFIType.u64], returns: FFIType.i64 },
+    close: { args: [FFIType.int], returns: FFIType.int },
+    fcntl: { args: [FFIType.int, FFIType.int, FFIType.int], returns: FFIType.int },
+    ioctl: { args: [FFIType.int, FFIType.u64, FFIType.ptr], returns: FFIType.int },
+  })
+  return { libutil, libc }
+}
 
-const libc = dlopen('libc.so.6', {
-  read: { args: [FFIType.int, FFIType.ptr, FFIType.u64], returns: FFIType.i64 },
-  write: { args: [FFIType.int, FFIType.ptr, FFIType.u64], returns: FFIType.i64 },
-  close: { args: [FFIType.int], returns: FFIType.int },
-  fcntl: { args: [FFIType.int, FFIType.int, FFIType.int], returns: FFIType.int },
-  ioctl: { args: [FFIType.int, FFIType.u64, FFIType.ptr], returns: FFIType.int },
-})
+// Loaded lazily so importing this module on macOS never touches Linux-only libs.
+let linuxLibs: ReturnType<typeof loadLinuxLibs> | null = null
+function linux() {
+  return (linuxLibs ??= loadLinuxLibs())
+}
 
 // Linux constants
 const F_SETFL = 4
@@ -38,7 +46,7 @@ export interface PtyOptions {
   env?: Record<string, string>
 }
 
-export class Pty {
+class LinuxPty {
   private master: number
   private slave: number
   private proc: Subprocess
@@ -48,8 +56,10 @@ export class Pty {
   private onDataCb: ((data: string) => void) | null = null
   private onExitCb: (() => void) | null = null
   private closed = false
+  private libc = linux().libc
 
   constructor(opts: PtyOptions = {}) {
+    const { libutil } = linux()
     const masterArr = new Int32Array(1)
     const slaveArr = new Int32Array(1)
     const rc = libutil.symbols.openpty(ptr(masterArr), ptr(slaveArr), null, null, null)
@@ -77,7 +87,7 @@ export class Pty {
     this.resize(opts.cols || 80, opts.rows || 24)
 
     // Make the master non-blocking so our poll loop never stalls.
-    libc.symbols.fcntl(this.master, F_SETFL, O_NONBLOCK)
+    this.libc.symbols.fcntl(this.master, F_SETFL, O_NONBLOCK)
 
     this.startReadLoop()
   }
@@ -87,7 +97,7 @@ export class Pty {
       if (this.closed) return
       // Drain everything currently available.
       for (let guard = 0; guard < 64; guard++) {
-        const n = Number(libc.symbols.read(this.master, ptr(this.readBuf), BigInt(this.readBuf.length)))
+        const n = Number(this.libc.symbols.read(this.master, ptr(this.readBuf), BigInt(this.readBuf.length)))
         if (n > 0) {
           const chunk = this.decoder.decode(this.readBuf.subarray(0, n), { stream: true })
           this.onDataCb?.(chunk)
@@ -110,14 +120,14 @@ export class Pty {
   write(data: string) {
     if (this.closed) return
     const bytes = new TextEncoder().encode(data)
-    libc.symbols.write(this.master, ptr(bytes), BigInt(bytes.length))
+    this.libc.symbols.write(this.master, ptr(bytes), BigInt(bytes.length))
   }
 
   resize(cols: number, rows: number) {
     if (this.closed) return
     // struct winsize { unsigned short ws_row, ws_col, ws_xpixel, ws_ypixel; }
     const ws = new Uint16Array([rows, cols, 0, 0])
-    libc.symbols.ioctl(this.master, BigInt(TIOCSWINSZ), ptr(ws))
+    this.libc.symbols.ioctl(this.master, BigInt(TIOCSWINSZ), ptr(ws))
   }
 
   private handleExit() {
@@ -134,8 +144,88 @@ export class Pty {
       this.proc.kill()
     } catch {}
     try {
-      libc.symbols.close(this.master)
-      libc.symbols.close(this.slave)
+      this.libc.symbols.close(this.master)
+      this.libc.symbols.close(this.slave)
     } catch {}
   }
 }
+
+/**
+ * macOS: no `setsid` binary and different libc symbols/ioctl constants, so use
+ * Bun's native PTY support (`Bun.spawn({ terminal })`). It allocates the PTY,
+ * makes it the shell's controlling terminal (job control, Ctrl+C) and handles
+ * resize — the same behavior the Linux FFI path implements by hand.
+ */
+class DarwinPty {
+  private proc: Subprocess
+  private terminal: any
+  private onDataCb: ((data: string) => void) | null = null
+  private onExitCb: (() => void) | null = null
+  private decoder = new TextDecoder()
+  private closed = false
+
+  constructor(opts: PtyOptions = {}) {
+    const shell = opts.shell || process.env.SHELL || '/bin/zsh'
+    this.proc = Bun.spawn([shell, '-il'], {
+      cwd: opts.cwd || process.env.HOME,
+      env: {
+        ...process.env,
+        ...opts.env,
+        TERM: 'xterm-256color',
+        COLORTERM: 'truecolor',
+      },
+      terminal: {
+        cols: opts.cols || 80,
+        rows: opts.rows || 24,
+        data: (_t: unknown, chunk: Uint8Array | string) => {
+          if (this.closed) return
+          const text =
+            typeof chunk === 'string' ? chunk : this.decoder.decode(chunk, { stream: true })
+          this.onDataCb?.(text)
+        },
+      },
+      onExit: () => this.handleExit(),
+    } as any)
+    this.terminal = (this.proc as any).terminal
+    if (!this.terminal) throw new Error('This Bun version has no PTY support (need Bun >= 1.3.5)')
+  }
+
+  onData(cb: (data: string) => void) {
+    this.onDataCb = cb
+  }
+
+  onExit(cb: () => void) {
+    this.onExitCb = cb
+  }
+
+  write(data: string) {
+    if (this.closed) return
+    this.terminal.write(data)
+  }
+
+  resize(cols: number, rows: number) {
+    if (this.closed) return
+    this.terminal.resize(cols, rows)
+  }
+
+  private handleExit() {
+    if (this.closed) return
+    this.onExitCb?.()
+    this.dispose()
+  }
+
+  dispose() {
+    if (this.closed) return
+    this.closed = true
+    try {
+      this.proc.kill()
+    } catch {}
+    try {
+      this.terminal.close()
+    } catch {}
+  }
+}
+
+export type Pty = LinuxPty | DarwinPty
+export const Pty: new (opts?: PtyOptions) => Pty =
+  process.platform === 'darwin' ? DarwinPty : LinuxPty

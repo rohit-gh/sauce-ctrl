@@ -26,17 +26,29 @@ function viewDiff(file: string, stagedFile: boolean) {
   repo.loadDiff(file, { staged: stagedFile })
 }
 
-function discardFile(f: FileChange) {
-  const warning = f.untracked
-    ? `Delete untracked file "${f.path}"? This permanently removes it and cannot be undone.`
-    : `Discard changes to "${f.path}"? This reverts the file and cannot be undone.`
-  if (!confirm(warning)) return
+async function discardFile(f: FileChange) {
+  const ok = f.untracked
+    ? await appConfirm(`Delete untracked file "${f.path}"? This permanently removes it and cannot be undone.`, {
+        title: 'Delete file?',
+        confirmLabel: 'Delete',
+        danger: true,
+      })
+    : await appConfirm(`Discard changes to "${f.path}"? This reverts the file and cannot be undone.`, {
+        title: 'Discard changes?',
+        confirmLabel: 'Discard',
+        danger: true,
+      })
+  if (!ok) return
   repo.discard([f.path])
 }
 
-function resetAll() {
+async function resetAll() {
   const n = unstaged.value.length
-  if (!confirm(`Reset all ${n} changed file${n === 1 ? '' : 's'}? This discards every uncommitted change and deletes untracked files. This cannot be undone.`)) return
+  const ok = await appConfirm(
+    `Reset all ${n} changed file${n === 1 ? '' : 's'}? This discards every uncommitted change and deletes untracked files. This cannot be undone.`,
+    { title: 'Reset all changes?', confirmLabel: 'Reset all', danger: true },
+  )
+  if (!ok) return
   repo.discardAll()
 }
 
@@ -47,7 +59,7 @@ async function commit() {
     await repo.commit(message.value.trim())
     message.value = ''
   } catch (err: any) {
-    alert(err?.data?.statusMessage || err?.message || 'Commit failed')
+    alertError(err, 'Commit failed')
   } finally {
     committing.value = false
   }

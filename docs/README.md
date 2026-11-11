@@ -5,6 +5,7 @@ Quick navigation for humans and AI agents. Prefer these docs over re-scanning th
 | Doc | Purpose |
 |-----|---------|
 | [Getting started](./getting-started.md) | Install, run, build an AppImage, env vars, first-use |
+| [Building the macOS DMG](./building-macos-dmg.md) | Build the latest `.dmg` and install it on a Mac |
 | [Architecture](./architecture.md) | System design, data flow, key constraints |
 | [Project map](./project-map.md) | File/folder index with responsibilities |
 
@@ -12,7 +13,7 @@ Quick navigation for humans and AI agents. Prefer these docs over re-scanning th
 
 **SauceCtrl** = local Nuxt 4 SPA + Bun Nitro API that wraps `git`/`gh`, with a real PTY terminal and SQLite project cache.
 
-On Linux you can also **`bun run build:appimage`** to produce a self-contained AppImage you run directly — handy for sharing or skipping a dev setup. See [getting started → Run as a standalone app](./getting-started.md#run-as-a-standalone-app-appimage).
+On macOS, **`bun run tauri:build`** produces a native `.app`/`.dmg` (Tauri 2). On Linux you can also **`bun run build:appimage`** to produce a self-contained AppImage you run directly — handy for sharing or skipping a dev setup. See [getting started → Run as a standalone app](./getting-started.md#run-as-a-standalone-app-appimage).
 
 ## Ports (defaults)
 

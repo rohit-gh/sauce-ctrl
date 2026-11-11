@@ -105,19 +105,23 @@ export const useRepoStore = defineStore('repo', {
           $fetch<RepoStatus>('/api/git/status', { query: { path } }),
           $fetch<StashEntry[]>('/api/git/stash/list', { query: { path } }),
         ])
+        // Another tab was activated while this loaded — its data wins.
+        if (this.path !== path) return
         this.commits = commits
         this.branches = branches
         this.status = status
         this.stashes = stashes
       } catch (err: any) {
-        this.error = err?.data?.statusMessage || err?.message || 'Failed to load repository'
+        if (this.path === path) this.error = err?.data?.statusMessage || err?.message || 'Failed to load repository'
       } finally {
-        this.loading = false
+        if (this.path === path) this.loading = false
       }
     },
     async refreshStatus() {
       if (!this.path) return
-      this.status = await $fetch<RepoStatus>('/api/git/status', { query: { path: this.path } })
+      const path = this.path
+      const status = await $fetch<RepoStatus>('/api/git/status', { query: { path } })
+      if (this.path === path) this.status = status
     },
     async selectCommit(hash: string) {
       this.closeDiff()
@@ -190,7 +194,7 @@ export const useRepoStore = defineStore('repo', {
         this.diffContent = res.diff
       } catch (err: any) {
         this.diffContent = ''
-        alert(err?.data?.statusMessage || err?.message || 'Failed to load diff')
+        alertError(err, 'Failed to load diff')
       } finally {
         this.diffLoading = false
       }
@@ -210,7 +214,7 @@ export const useRepoStore = defineStore('repo', {
         this.status = res.status
         await this.load(this.path)
       } catch (err: any) {
-        alert(err?.data?.statusMessage || err?.message || 'Fetch failed')
+        alertError(err, 'Fetch failed')
       } finally {
         this.remoteBusy = ''
       }
@@ -226,7 +230,7 @@ export const useRepoStore = defineStore('repo', {
         this.status = res.status
         await this.load(this.path)
       } catch (err: any) {
-        alert(err?.data?.statusMessage || err?.message || 'Pull failed')
+        alertError(err, 'Pull failed')
       } finally {
         this.remoteBusy = ''
       }
@@ -246,7 +250,7 @@ export const useRepoStore = defineStore('repo', {
         if (info?.reason === 'unsupported-remote') {
           useUiStore().unsupportedRemote = { remote: info.remote, url: info.url }
         } else {
-          alert(err?.data?.statusMessage || err?.message || 'Push failed')
+          alertError(err, 'Push failed')
         }
       } finally {
         this.remoteBusy = ''

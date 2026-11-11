@@ -54,15 +54,13 @@ watch(
   },
 )
 
-// Browse for a folder with the native picker and add it directly — no manual path entry.
+// Browse for a folder with the native picker and add it directly. Picking a
+// folder that only *contains* repos opens discovery scoped to that folder.
 async function browseAndAdd() {
   if (adding.value) return
   adding.value = true
-  projects.error = ''
   try {
-    const res = await $fetch<{ path: string | null }>('/api/system/pick-folder')
-    if (!res.path) return
-    await projects.add(res.path)
+    await projects.addFromPicker()
   } catch (err: any) {
     if (!projects.error) {
       projects.error = err?.data?.statusMessage || err?.message || 'Could not add folder'
@@ -75,7 +73,7 @@ async function browseAndAdd() {
 
 <template>
   <div class="flex flex-1 flex-col items-center justify-center gap-6 p-8">
-    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-accent-soft text-3xl font-bold text-white">
+    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-accent-soft text-3xl font-bold text-on-accent">
       S
     </div>
     <div class="text-center">
@@ -160,6 +158,9 @@ async function browseAndAdd() {
       </div>
 
       <div class="flex flex-col gap-2">
+        <button class="btn-primary w-full justify-center py-2" @click="ui.openRepoDiscovery()">
+          <span class="text-base">🔍</span> Find repositories on this computer
+        </button>
         <button class="btn-subtle w-full justify-center" :disabled="adding" @click="browseAndAdd">
           <span class="text-base">📁</span>
           {{ adding ? 'Opening folder picker…' : 'Browse & add repo' }}

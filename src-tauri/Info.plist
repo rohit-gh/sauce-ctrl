@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+		Merged by Tauri into the bundle's Info.plist. These explain the macOS
+		privacy prompts shown when SauceCtrl opens repositories in these places
+		or scans for repositories (Settings → Repositories).
+	-->
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>SauceCtrl looks for Git repositories in your Documents folder and opens the ones you choose.</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>SauceCtrl looks for Git repositories on your Desktop and opens the ones you choose.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>SauceCtrl looks for Git repositories in your Downloads folder and opens the ones you choose.</string>
+	<key>NSRemovableVolumesUsageDescription</key>
+	<string>SauceCtrl looks for Git repositories on external drives and opens the ones you choose.</string>
+	<key>NSNetworkVolumesUsageDescription</key>
+	<string>SauceCtrl looks for Git repositories on network drives and opens the ones you choose.</string>
+</dict>
+</plist>

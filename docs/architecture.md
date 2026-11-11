@@ -46,7 +46,7 @@
 | Git | `server/utils/git.ts` | `runGit`, log, status, branches, commit detail, diff |
 | GitHub | `server/utils/gh.ts` | `gh` install/auth probe, token persist |
 | DB | `server/utils/db.ts` | SQLite projects/settings/cache |
-| PTY | `server/utils/pty.ts` | FFI `openpty`, read/write master, resize |
+| PTY | `server/utils/pty.ts` | Linux: FFI `openpty`, read/write master, resize. macOS: `Bun.spawn({ terminal })` |
 | Terminal WS | `server/terminal-server.ts` | Standalone `Bun.serve` + WebSocket |
 | Supervisor | `server/plugins/terminal-ws.ts` | Spawn/kill terminal child |
 
@@ -56,7 +56,11 @@
 
 ## Why not node-pty
 
-`node-pty` reads the PTY master fd in a way incompatible with Bun (`ESPIPE`). We use `libutil.openpty` via `bun:ffi` instead.
+`node-pty` reads the PTY master fd in a way incompatible with Bun (`ESPIPE`). On Linux we use `libutil.openpty` via `bun:ffi` instead; on macOS (no `setsid`, different libc constants) we use Bun's built-in PTY support (`Bun.spawn({ terminal })`), which also gives the shell a controlling terminal for job control.
+
+## Desktop shell (macOS, Tauri 2)
+
+`src-tauri/` is a thin Rust host. It does not reimplement the backend: it picks ports (preferring a stable `39157`/`39158` so the webview origin and its `localStorage` persist, falling back to random), resolves the user's login-shell `PATH` (GUI apps on macOS otherwise miss Homebrew's `gh`), starts the bundled Bun sidecar on the Nitro build, opens a native webview once the server answers, and stops the backend on quit/SIGTERM. Backend logs go to `~/Library/Logs/SauceCtrl/server.log`.
 
 ## Git output parsing
 

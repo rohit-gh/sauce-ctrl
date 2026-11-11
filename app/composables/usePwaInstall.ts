@@ -22,6 +22,19 @@ function detectInstalled(): boolean {
   return Boolean(standalone || iosStandalone)
 }
 
+/**
+ * True when SauceCtrl is already running as an app: launched by a desktop
+ * bundle (Tauri .app, macOS .dmg launcher, AppImage) or an installed PWA.
+ */
+export function isRunningAsApp(): boolean {
+  if (!import.meta.client) return false
+  const flag = useRuntimeConfig().public.desktopApp as unknown
+  if (flag === true || flag === 'true' || flag === 1 || flag === '1') return true
+  // Tauri's webview (fallback for `tauri dev`, where the launcher env isn't set).
+  if ('__TAURI_INTERNALS__' in window) return true
+  return detectInstalled()
+}
+
 function detectBrowser(): BrowserFamily {
   if (!import.meta.client) return 'other'
   const ua = navigator.userAgent

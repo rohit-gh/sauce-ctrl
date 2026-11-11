@@ -12,6 +12,7 @@ interface GitEnv {
   userName: string | null
   userEmail: string | null
   configured: boolean
+  installHint?: { command: string; note: string } | null
 }
 
 const ui = useUiStore()
@@ -134,13 +135,24 @@ async function copy(text: string) {
         <div v-else class="mt-4 space-y-3 text-sm">
           <div v-if="!git?.installed">
             <p class="mb-1 font-medium text-slate-200">Install Git</p>
-            <p class="mb-1 text-slate-400">
-              Install the git CLI. You'll be prompted for your <code>sudo</code> password.
-            </p>
-            <div class="flex items-center gap-2 rounded-md bg-ink-950 p-2 font-mono text-[11px] text-slate-400">
-              <code class="flex-1">sudo apt install git -y</code>
-              <button class="btn-subtle !py-0.5 !text-[11px]" @click="copy('sudo apt install git -y')">Copy</button>
-            </div>
+            <template v-if="git?.installHint">
+              <p class="mb-1 text-slate-400">
+                SauceCtrl doesn't bundle Git. Run this in the terminal below, then click Re-check status. {{ git.installHint.note }}
+              </p>
+              <div class="flex items-center gap-2 rounded-md bg-ink-950 p-2 font-mono text-[11px] text-slate-400">
+                <code class="flex-1">{{ git.installHint.command }}</code>
+                <button class="btn-subtle !py-0.5 !text-[11px]" @click="copy(git.installHint.command)">Copy</button>
+              </div>
+            </template>
+            <template v-else>
+              <p class="mb-1 text-slate-400">
+                Install the git CLI. You'll be prompted for your <code>sudo</code> password.
+              </p>
+              <div class="flex items-center gap-2 rounded-md bg-ink-950 p-2 font-mono text-[11px] text-slate-400">
+                <code class="flex-1">sudo apt install git -y</code>
+                <button class="btn-subtle !py-0.5 !text-[11px]" @click="copy('sudo apt install git -y')">Copy</button>
+              </div>
+            </template>
           </div>
           <div v-if="git?.installed && !git?.configured">
             <p class="mb-1 font-medium text-slate-200">Set your Git identity</p>
