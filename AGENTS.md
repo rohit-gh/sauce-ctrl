@@ -14,6 +14,8 @@ Guidance for AI coding agents working on SauceCtrl.
 - **Dev**: `bun run dev` → opens UI + API; terminal WS on port `3009`.
 - **AppImage**: `bun run build:appimage` → `release/SauceCtrl-x86_64.AppImage` (Linux standalone).
 - **macOS (Tauri 2)**: `bun run tauri:build` → `src-tauri/target/release/bundle/{macos,dmg}/`; `bun run tauri:dev` for a native dev window. Needs Rust. The Tauri host only launches the bundled Bun backend — backend logic stays in `server/`.
+- **Linux (Tauri 2)**: same `bun run tauri:build` → `src-tauri/target/release/bundle/{deb,rpm,appimage}/`. Needs Rust + WebKitGTK dev packages; Linux overrides live in `src-tauri/tauri.linux.conf.json`.
+- **Linux .deb (no Rust)**: `bun run build:deb` → `release/sauce-ctrl_<version>_<arch>.deb` (reuses the AppImage launcher).
 - **macOS (no Rust)**: `bun run build:dmg` → `release/SauceCtrl-<arch>.dmg` (Chromium `--app` launcher).
 - **Components**: one Nuxt component per UI concern in `app/components/`.
 - **Git**: CLI only via `server/utils/git.ts` — no NUL bytes in exec args.

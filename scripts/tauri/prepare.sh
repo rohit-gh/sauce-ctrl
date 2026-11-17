@@ -1,6 +1,8 @@
 #!/bin/bash
 # Stage everything the Tauri shell bundles, into src-tauri/ (git-ignored):
-#   binaries/bun-<target-triple>   the Bun runtime (Tauri "externalBin" sidecar)
+#   binaries/<sidecar>-<target-triple>   the Bun runtime (Tauri "externalBin" sidecar;
+#                                        `bun` on macOS, `sauce-ctrl-bun` on Linux so the
+#                                        .deb/.rpm don't install a /usr/bin/bun)
 #   resources/app/output/          the Nitro build (.output; renamed so globs never skip a dot-dir)
 #   resources/app/server/          terminal-server.ts + pty.ts (spawned by the Nitro plugin at runtime)
 #
@@ -30,10 +32,15 @@ if [[ -z "${BUN_BIN}" ]]; then
 fi
 BUN_BIN="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "${BUN_BIN}")"
 
+case "$(uname -s)" in
+  Darwin) SIDECAR="bun" ;;
+  *)      SIDECAR="sauce-ctrl-bun" ;;  # must match BUN_SIDECAR in src-tauri/src/main.rs
+esac
+
 mkdir -p "${TAURI}/binaries"
-cp -f "${BUN_BIN}" "${TAURI}/binaries/bun-${TRIPLE}"
-chmod +x "${TAURI}/binaries/bun-${TRIPLE}"
-log "sidecar: ${BUN_BIN} → binaries/bun-${TRIPLE}"
+cp -f "${BUN_BIN}" "${TAURI}/binaries/${SIDECAR}-${TRIPLE}"
+chmod +x "${TAURI}/binaries/${SIDECAR}-${TRIPLE}"
+log "sidecar: ${BUN_BIN} → binaries/${SIDECAR}-${TRIPLE}"
 
 APP="${TAURI}/resources/app"
 rm -rf "${APP}"

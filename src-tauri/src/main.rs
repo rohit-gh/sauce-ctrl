@@ -4,7 +4,8 @@
 //! Bun, plus a separate Bun terminal WebSocket process (see AGENTS.md — those
 //! must stay on Bun). This host only:
 //!   1. picks ports and resolves the user's real shell `PATH` (GUI apps on
-//!      macOS get a minimal one, which would hide Homebrew's `gh`),
+//!      macOS get a minimal one, which would hide Homebrew's `gh`; Linux
+//!      desktop launchers often miss `~/.local/bin` and friends too),
 //!   2. starts the bundled Bun runtime on the Nitro build,
 //!   3. opens a native webview on it once it answers,
 //!   4. stops the backend when the app quits.
@@ -30,6 +31,18 @@ const HOST: &str = "127.0.0.1";
 const PREFERRED_HTTP_PORT: u16 = 39157;
 const PREFERRED_WS_PORT: u16 = 39158;
 const READY_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Sidecar file name (Tauri `externalBin`, placed next to the main executable).
+/// On Linux the .deb/.rpm install it into /usr/bin, so it must not be `bun`.
+#[cfg(target_os = "macos")]
+const BUN_SIDECAR: &str = "bun";
+#[cfg(not(target_os = "macos"))]
+const BUN_SIDECAR: &str = "sauce-ctrl-bun";
+
+#[cfg(target_os = "macos")]
+const DEFAULT_SHELL: &str = "/bin/zsh";
+#[cfg(not(target_os = "macos"))]
+const DEFAULT_SHELL: &str = "/bin/bash";
 
 struct Backend(Mutex<Option<Child>>);
 
@@ -74,10 +87,10 @@ fn pick_port(preferred: u16, avoid: Option<u16>) -> u16 {
     }
 }
 
-/// Ask the user's login shell for its PATH, then merge with sane macOS defaults.
+/// Ask the user's login shell for its PATH, then merge with sane defaults.
 fn resolve_path() -> String {
     const MARK: &str = "__SAUCECTRL_PATH__";
-    let shell = env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".into());
+    let shell = env::var("SHELL").unwrap_or_else(|_| DEFAULT_SHELL.into());
     let mut from_shell = String::new();
 
     if let Ok(mut child) = Command::new(&shell)
@@ -110,20 +123,26 @@ fn resolve_path() -> String {
     }
 
     let mut seen: Vec<String> = Vec::new();
-    let defaults = [
-        "/opt/homebrew/bin",
-        "/opt/homebrew/sbin",
-        "/usr/local/bin",
-        "/usr/bin",
-        "/bin",
-        "/usr/sbin",
-        "/sbin",
-    ];
+    let mut defaults: Vec<String> = Vec::new();
+    #[cfg(target_os = "macos")]
+    defaults.extend(["/opt/homebrew/bin".into(), "/opt/homebrew/sbin".into()]);
+    #[cfg(target_os = "linux")]
+    if let Some(home) = env::var_os("HOME") {
+        let home = PathBuf::from(home);
+        for sub in [".local/bin", ".bun/bin"] {
+            defaults.push(home.join(sub).to_string_lossy().into_owned());
+        }
+    }
+    defaults.extend(
+        ["/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"]
+            .iter()
+            .map(|s| s.to_string()),
+    );
     let current = env::var("PATH").unwrap_or_default();
     for part in from_shell
         .split(':')
         .chain(current.split(':'))
-        .chain(defaults.iter().copied())
+        .chain(defaults.iter().map(String::as_str))
     {
         if !part.is_empty() && !seen.iter().any(|s| s == part) {
             seen.push(part.to_string());
@@ -135,6 +154,7 @@ fn resolve_path() -> String {
 /// Is the Xcode Command Line Tools (or Xcode) install present? Without it,
 /// /usr/bin/git is only a stub that opens Apple's installer when executed, so
 /// we must check this instead of running it.
+#[cfg(target_os = "macos")]
 fn developer_tools_installed() -> bool {
     match Command::new("/usr/bin/xcode-select").arg("-p").output() {
         Ok(out) if out.status.success() => {
@@ -152,6 +172,7 @@ fn find_git(path: &str) -> Option<PathBuf> {
         if !candidate.is_file() {
             continue;
         }
+        #[cfg(target_os = "macos")]
         if candidate == Path::new("/usr/bin/git") && !developer_tools_installed() {
             continue;
         }
@@ -161,6 +182,7 @@ fn find_git(path: &str) -> Option<PathBuf> {
 }
 
 /// Git is missing: explain, and offer Apple's interactive installer. Quits if declined.
+#[cfg(target_os = "macos")]
 fn prompt_install_git() {
     let script = r#"display dialog "SauceCtrl needs Git, which isn't installed on this Mac.\n\nClick Install Git to open Apple's installer for the Command Line Tools (this includes Git). When it finishes, SauceCtrl picks Git up automatically.\n\nPrefer Homebrew? Quit, run: brew install git" with title "Git is required" buttons {"Quit", "Install Git"} default button "Install Git" cancel button "Quit" with icon caution"#;
     let installing = Command::new("osascript")
@@ -173,6 +195,111 @@ fn prompt_install_git() {
     }
     // Opens the macOS "install command line developer tools" window and returns.
     let _ = Command::new("/usr/bin/xcode-select").arg("--install").status();
+}
+
+/// Git is missing: there is no universal installer on Linux, so explain and quit.
+#[cfg(not(target_os = "macos"))]
+fn prompt_install_git() {
+    error_dialog(
+        "Git is required",
+        "SauceCtrl needs Git, which isn't installed (or isn't on your PATH).\n\n\
+         Install it with your package manager, then start SauceCtrl again:\n\n\
+         Debian/Ubuntu/Mint:  sudo apt install git\n\
+         Fedora:  sudo dnf install git\n\
+         Arch:  sudo pacman -S git",
+    );
+    std::process::exit(0);
+}
+
+/// When running from an AppImage, the AppRun hook points GTK/GIO/etc. at the
+/// libraries inside the image. Child processes (git, the user's terminal shell,
+/// the browser opened for external links) must get the user's normal
+/// environment back, or they can load the wrong modules and crash.
+#[cfg(target_os = "linux")]
+fn scrub_appimage_env(cmd: &mut Command) {
+    if env::var_os("APPIMAGE").is_none() {
+        return;
+    }
+    for key in [
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "GTK_PATH",
+        "GTK_DATA_PREFIX",
+        "GTK_EXE_PREFIX",
+        "GTK_IM_MODULE_FILE",
+        "GTK_THEME",
+        "GDK_PIXBUF_MODULE_FILE",
+        "GDK_PIXBUF_MODULEDIR",
+        "GDK_BACKEND",
+        "GIO_MODULE_DIR",
+        "GIO_EXTRA_MODULES",
+        "GI_TYPELIB_PATH",
+        "GSETTINGS_SCHEMA_DIR",
+        "PYTHONHOME",
+        "PYTHONPATH",
+        "PERLLIB",
+        "QT_PLUGIN_PATH",
+    ] {
+        cmd.env_remove(key);
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn scrub_appimage_env(_cmd: &mut Command) {}
+
+/// Native error dialog (best effort; always also printed to stderr by callers).
+#[cfg(target_os = "macos")]
+fn error_dialog(title: &str, message: &str) {
+    let esc = |s: &str| s.replace('\\', "\\\\").replace('"', "\\\"");
+    let _ = Command::new("osascript")
+        .args([
+            "-e",
+            &format!(
+                "display alert \"{}\" message \"{}\" as critical",
+                esc(title),
+                esc(message)
+            ),
+        ])
+        .status();
+}
+
+#[cfg(not(target_os = "macos"))]
+fn error_dialog(title: &str, message: &str) {
+    let attempts: [(&str, Vec<String>); 3] = [
+        (
+            "zenity",
+            vec![
+                "--error".into(),
+                "--no-markup".into(),
+                format!("--title={title}"),
+                format!("--text={message}"),
+            ],
+        ),
+        (
+            "kdialog",
+            vec!["--title".into(), title.into(), "--error".into(), message.into()],
+        ),
+        ("notify-send", vec!["-u".into(), "critical".into(), title.into(), message.into()]),
+    ];
+    for (prog, args) in attempts {
+        let mut cmd = Command::new(prog);
+        cmd.args(&args);
+        scrub_appimage_env(&mut cmd);
+        if cmd.status().is_ok() {
+            return;
+        }
+    }
+}
+
+/// Open an external URL in the user's default browser.
+fn open_external(url: &str) {
+    #[cfg(target_os = "macos")]
+    let mut cmd = Command::new("open");
+    #[cfg(not(target_os = "macos"))]
+    let mut cmd = Command::new("xdg-open");
+    cmd.arg(url).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+    scrub_appimage_env(&mut cmd);
+    let _ = cmd.spawn();
 }
 
 fn wait_until_ready(port: u16, backend: &Mutex<Option<Child>>) -> Result<(), String> {
@@ -192,8 +319,23 @@ fn wait_until_ready(port: u16, backend: &Mutex<Option<Child>>) -> Result<(), Str
     Err(format!("server did not respond on port {port} within {READY_TIMEOUT:?}"))
 }
 
+/// macOS: ~/Library/Logs/SauceCtrl. Linux: $XDG_STATE_HOME/sauce-ctrl (~/.local/state/sauce-ctrl).
+fn log_dir() -> Option<PathBuf> {
+    let home = PathBuf::from(env::var_os("HOME")?);
+    #[cfg(target_os = "macos")]
+    return Some(home.join("Library/Logs/SauceCtrl"));
+    #[cfg(not(target_os = "macos"))]
+    {
+        let state = env::var_os("XDG_STATE_HOME")
+            .map(PathBuf::from)
+            .filter(|p| p.is_absolute())
+            .unwrap_or_else(|| home.join(".local/state"));
+        Some(state.join("sauce-ctrl"))
+    }
+}
+
 fn log_file() -> Option<(fs::File, PathBuf)> {
-    let dir = PathBuf::from(env::var_os("HOME")?).join("Library/Logs/SauceCtrl");
+    let dir = log_dir()?;
     fs::create_dir_all(&dir).ok()?;
     let path = dir.join("server.log");
     let f = fs::OpenOptions::new().create(true).append(true).open(&path).ok()?;
@@ -203,7 +345,7 @@ fn log_file() -> Option<(fs::File, PathBuf)> {
 fn start_backend(app: &AppHandle, http_port: u16, ws_port: u16, path_env: &str) -> Result<Child, String> {
     // Tauri places externalBin sidecars next to the main executable.
     let exe = env::current_exe().map_err(|e| e.to_string())?;
-    let bun = exe.parent().ok_or("no exe dir")?.join("bun");
+    let bun = exe.parent().ok_or("no exe dir")?.join(BUN_SIDECAR);
     if !bun.exists() {
         return Err(format!("bundled Bun runtime not found at {}", bun.display()));
     }
@@ -232,8 +374,9 @@ fn start_backend(app: &AppHandle, http_port: u16, ws_port: u16, path_env: &str) 
         .env("NUXT_PUBLIC_DESKTOP_APP", "true")
         .env("NODE_ENV", "production")
         .stdin(Stdio::null());
+    scrub_appimage_env(&mut cmd);
     if env::var_os("SHELL").is_none() {
-        cmd.env("SHELL", "/bin/zsh");
+        cmd.env("SHELL", DEFAULT_SHELL);
     }
     if env::var_os("LANG").is_none() {
         cmd.env("LANG", "en_US.UTF-8");
@@ -272,15 +415,7 @@ fn stop_backend(backend: &Backend) {
 
 fn fatal(message: &str) -> ! {
     eprintln!("[SauceCtrl] {message}");
-    let esc = message.replace('\\', "\\\\").replace('"', "\\\"");
-    let _ = Command::new("osascript")
-        .args([
-            "-e",
-            &format!(
-                "display alert \"SauceCtrl could not start\" message \"{esc}\" as critical"
-            ),
-        ])
-        .status();
+    error_dialog("SauceCtrl could not start", message);
     std::process::exit(1);
 }
 
@@ -295,7 +430,7 @@ fn open_window(app: &AppHandle, url: &str) -> tauri::Result<()> {
             // Keep the app on its local origin; send anything else to the browser.
             let local = matches!(nav.host_str(), Some("127.0.0.1") | Some("localhost"));
             if !local && matches!(nav.scheme(), "http" | "https") {
-                let _ = Command::new("open").arg(nav.as_str()).spawn();
+                open_external(nav.as_str());
             }
             local
         })
@@ -304,6 +439,13 @@ fn open_window(app: &AppHandle, url: &str) -> tauri::Result<()> {
 }
 
 fn main() {
+    // WebKitGTK's DMA-BUF renderer shows a blank/white window on many
+    // NVIDIA and some Wayland setups. Opt out unless the user chose otherwise.
+    #[cfg(target_os = "linux")]
+    if env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
+        env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    }
+
     let app = tauri::Builder::default()
         .manage(Backend(Mutex::new(None)))
         .setup(|app| {

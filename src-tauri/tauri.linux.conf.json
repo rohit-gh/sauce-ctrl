@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "targets": ["deb", "rpm", "appimage"],
+    "externalBin": ["binaries/sauce-ctrl-bun"],
+    "linux": {
+      "deb": {
+        "depends": ["git"]
+      },
+      "rpm": {
+        "depends": ["git"]
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    }
+  }
+}

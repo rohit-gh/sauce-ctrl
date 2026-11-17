@@ -15,12 +15,61 @@
  * resolves `server/terminal-server.ts` relative to cwd).
  */
 import { createServer } from 'node:net'
-import { existsSync, mkdirSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
 import type { Subprocess } from 'bun'
 
 const APP_DIR = import.meta.dir
 const HOST = '127.0.0.1'
+const STATE_DIR = join(process.env.HOME || '/tmp', '.sauce-ctrl')
+const PROFILE_DIR = join(STATE_DIR, 'browser-profile')
+/** {pid, url} of the running instance, so a second launch reuses it. */
+const INSTANCE_FILE = join(STATE_DIR, 'instance.json')
+
+/** URL of an already-running SauceCtrl (AppImage or .deb), if it answers. */
+async function runningInstanceUrl(): Promise<string | null> {
+  try {
+    const { pid, url } = JSON.parse(readFileSync(INSTANCE_FILE, 'utf8'))
+    if (typeof url !== 'string' || pid === process.pid) return null
+    process.kill(pid, 0) // throws if that launcher is gone
+    await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(1500) })
+    return url
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Is any Chromium process still using our profile? Chromium allows one
+ * browser process per profile: launching a second one just hands the window to
+ * the first and exits immediately, so the spawned process exiting does NOT mean
+ * the user closed the window.
+ */
+function profileInUse(): boolean {
+  const needle = `--user-data-dir=${PROFILE_DIR}`
+  let pids: string[] = []
+  try {
+    pids = readdirSync('/proc').filter((d) => /^\d+$/.test(d))
+  } catch {
+    return false
+  }
+  for (const pid of pids) {
+    try {
+      // Chromium rewrites its process title, so args may be space- rather
+      // than NUL-separated.
+      const cmd = readFileSync(`/proc/${pid}/cmdline`, 'utf8').replace(/\0/g, ' ')
+      if (` ${cmd} `.includes(` ${needle} `)) return true
+    } catch {}
+  }
+  return false
+}
 
 function findFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -89,6 +138,20 @@ function pickBrowser(): { cmd: string; app: boolean } | null {
 }
 
 async function main() {
+  // Single instance: a second launch just opens another window on the first.
+  const existing = await runningInstanceUrl()
+  if (existing) {
+    const browser = pickBrowser()
+    if (browser) {
+      const args = browser.app
+        ? [browser.cmd, `--app=${existing}`, `--user-data-dir=${PROFILE_DIR}`, '--class=SauceCtrl']
+        : [browser.cmd, existing]
+      await Bun.spawn(args, { stdout: 'ignore', stderr: 'ignore' }).exited
+    }
+    console.log(`[SauceCtrl] already running at ${existing}`)
+    return
+  }
+
   const httpPort = await findFreePort()
   let wsPort = await findFreePort()
   if (wsPort === httpPort) wsPort = await findFreePort()
@@ -122,6 +185,10 @@ async function main() {
     try {
       server.kill()
     } catch {}
+    try {
+      const cur = JSON.parse(readFileSync(INSTANCE_FILE, 'utf8'))
+      if (cur.pid === process.pid) rmSync(INSTANCE_FILE, { force: true })
+    } catch {}
     process.exit(code)
   }
   for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
@@ -137,6 +204,11 @@ async function main() {
     return
   }
 
+  try {
+    mkdirSync(STATE_DIR, { recursive: true })
+    writeFileSync(INSTANCE_FILE, JSON.stringify({ pid: process.pid, url }))
+  } catch {}
+
   // Opening the UI is best-effort: if no browser is available or the launch
   // fails for any reason, keep the server running and just print the URL rather
   // than tearing everything down.
@@ -146,11 +218,7 @@ async function main() {
       // Dedicated app window with its own profile so it behaves like a
       // standalone program. Waiting on this process gives us the natural
       // "close the window = quit the app" lifecycle.
-      const profileDir = join(
-        process.env.HOME || '/tmp',
-        '.sauce-ctrl',
-        'browser-profile',
-      )
+      const profileDir = PROFILE_DIR
       if (!existsSync(profileDir)) mkdirSync(profileDir, { recursive: true })
       const { width, height } = await getScreenSize()
       const win: Subprocess = Bun.spawn(
@@ -168,6 +236,9 @@ async function main() {
         { stdout: 'inherit', stderr: 'inherit' },
       )
       await win.exited
+      // If Chromium handed the window to a browser already using this profile,
+      // keep serving until that browser (and so our window) is gone too.
+      while (profileInUse()) await Bun.sleep(2000)
       shutdown(0)
       return
     } catch (err) {

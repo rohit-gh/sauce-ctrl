@@ -11,6 +11,7 @@
     "preview": "bun --bun nuxt preview",
     "start": "bun --bun .output/server/index.mjs",
     "build:appimage": "bash scripts/build-appimage.sh",
+    "build:deb": "bash scripts/build-deb.sh",
     "build:dmg": "bash scripts/build-dmg.sh",
     "tauri:dev": "bash scripts/tauri/prepare.sh dev && tauri dev",
     "tauri:build": "bash scripts/tauri/prepare.sh && tauri build",

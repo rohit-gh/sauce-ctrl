@@ -9,7 +9,7 @@
 | `gh` | optional | GitHub auth/setup (installable from in-app modal) |
 | Linux | `libutil`, `setsid` | PTY allocation and job control |
 | macOS | Bun ≥ 1.3.5 | Native PTY (`Bun.spawn({ terminal })`) |
-| Rust (macOS desktop build only) | stable | Builds the Tauri 2 shell (`rustup`) |
+| Rust (Tauri desktop builds only) | stable | Builds the Tauri 2 shell (`rustup`); Linux also needs the WebKitGTK system packages below |
 
 > **Important:** SauceCtrl must run under the **Bun runtime**, not Node. Plain `nuxt dev` under Node will fail on `bun:sqlite` / `bun:ffi`.
 
@@ -134,3 +134,49 @@ Notes:
 ### Without Rust: `bun run build:dmg`
 
 Builds `release/SauceCtrl-<arch>.dmg` with a small launcher that opens a Chromium-family browser in `--app` mode (falls back to your default browser).
+
+## Run as a standalone app (Linux, Tauri 2)
+
+Same Tauri host as macOS, with a native WebKitGTK window instead of a Chromium `--app` window.
+
+One-time setup (Debian/Ubuntu/Mint; see [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/#linux) for other distros):
+
+```bash
+sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
+  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Build:
+
+```bash
+bun install
+bun run tauri:build
+```
+
+Output (`src-tauri/tauri.linux.conf.json` overrides the macOS targets):
+
+- `src-tauri/target/release/bundle/deb/SauceCtrl_<version>_amd64.deb`
+- `src-tauri/target/release/bundle/rpm/SauceCtrl-<version>-1.x86_64.rpm`
+- `src-tauri/target/release/bundle/appimage/SauceCtrl_<version>_amd64.AppImage`
+
+`bun run tauri:dev` opens a native window on the Nuxt dev server (hot reload).
+
+Notes:
+
+- The bundled Bun is installed as `sauce-ctrl-bun` (next to `/usr/bin/sauce-ctrl` for .deb/.rpm), so it never clashes with your own `bun`.
+- **`git` is still required** (the .deb/.rpm declare it as a dependency). If it's missing, a dialog explains how to install it.
+- `WEBKIT_DISABLE_DMABUF_RENDERER=1` is set by default to avoid blank windows on NVIDIA/Wayland; export `WEBKIT_DISABLE_DMABUF_RENDERER=0` to opt back in.
+- Server log: `~/.local/state/sauce-ctrl/server.log` (or `$XDG_STATE_HOME/sauce-ctrl/`).
+- The older `bun run build:appimage` (no Rust, Chromium `--app` window) still works.
+
+### Without Rust: `bun run build:deb`
+
+Builds `release/sauce-ctrl_<version>_<arch>.deb` with the same Bun + launcher payload as the AppImage (Chromium-family `--app` window, falling back to your default browser). Needs only `dpkg-deb`.
+
+```bash
+bun run build:deb
+sudo apt install ./release/sauce-ctrl_0.1.0_amd64.deb
+```
+
+Installs `/usr/bin/sauce-ctrl`, a private Bun in `/usr/lib/sauce-ctrl/`, and an app-menu entry. Depends on `git`. It uses the same package name as the Tauri `.deb`, so installing one replaces the other. Remove with `sudo apt remove sauce-ctrl`.
