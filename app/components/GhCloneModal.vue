@@ -112,7 +112,7 @@ onMounted(() => {
       <div class="flex items-center justify-between border-b border-ink-800 px-5 py-4">
         <div>
           <h2 class="text-base font-semibold text-white">Clone from GitHub</h2>
-          <p class="text-[11px] text-slate-500">Pick a repository from your connected account.</p>
+          <p class="text-[11px] text-slate-500">Pick a repository you own, collaborate on, or can access through an organization.</p>
         </div>
         <button class="text-slate-500 hover:text-white" title="Close" @click="ui.ghCloneOpen = false">✕</button>
       </div>

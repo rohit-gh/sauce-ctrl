@@ -53,10 +53,13 @@ export interface GhRepo {
 }
 
 /**
- * List repositories the authenticated user can access.
+ * List repositories the authenticated user can access: their own, repos in
+ * orgs they belong to, and repos on other accounts where they are a collaborator.
  * When `owner` is set (a user or org), lists that account's repos instead.
  */
 export async function ghListRepos(owner?: string, limit = 200): Promise<GhRepo[]> {
+  if (!owner) return ghListAccessibleRepos()
+
   const args = ['repo', 'list']
   if (owner) args.push(owner)
   args.push(
@@ -82,6 +85,46 @@ export async function ghListRepos(owner?: string, limit = 200): Promise<GhRepo[]
       language: r.primaryLanguage?.name ?? null,
     }))
     .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+}
+
+/**
+ * `gh repo list` only returns repos owned by the user, so use the REST
+ * `user/repos` endpoint with every affiliation to include org and collaborator repos.
+ */
+async function ghListAccessibleRepos(): Promise<GhRepo[]> {
+  const { stdout } = await execFileAsync(
+    'gh',
+    [
+      'api',
+      '--paginate',
+      'user/repos?affiliation=owner,collaborator,organization_member&sort=updated&per_page=100',
+      '--jq',
+      '.[] | {nameWithOwner: .full_name, name, description, isPrivate: .private, isFork: .fork, updatedAt: .updated_at, url: .html_url, language}',
+    ],
+    {
+      maxBuffer: 1024 * 1024 * 64,
+      env: { ...process.env, GH_PROMPT_DISABLED: '1' },
+    },
+  )
+  const seen = new Set<string>()
+  const repos: GhRepo[] = []
+  for (const line of stdout.split('\n')) {
+    if (!line.trim()) continue
+    const r = JSON.parse(line)
+    if (seen.has(r.nameWithOwner)) continue
+    seen.add(r.nameWithOwner)
+    repos.push({
+      nameWithOwner: r.nameWithOwner,
+      name: r.name,
+      description: r.description || '',
+      isPrivate: !!r.isPrivate,
+      isFork: !!r.isFork,
+      updatedAt: r.updatedAt,
+      url: r.url,
+      language: r.language ?? null,
+    })
+  }
+  return repos.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
 }
 
 /** Clone a repo (owner/name) into `targetDir` using gh's authenticated credentials. */
